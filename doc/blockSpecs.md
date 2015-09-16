@@ -31,7 +31,7 @@ We will be using the following syntax to describe blocks:
 
 Control holds blocks that modify the linear execution of a script.
 
-#### Conditionals
+##### Conditionals
 
 Branching and decision making.
 
@@ -69,7 +69,7 @@ _Lua_
 
 ---
 
-#### Iterators
+##### Iterators
 
 Repeat a stack of blocks a number of times, depending on some condition.
 
@@ -172,7 +172,7 @@ Mathematical, logical and string manipulation operators belong here. Since the L
 
 Data holds all blocks related to variable handling and data types.
 
-#### Variables
+##### Variables
 
 Blocks that handle variable assignment and modification.
 
@@ -208,7 +208,7 @@ _Lua_
 
 ---
 
-#### Tables
+##### Tables
 
 We reuse the already established metaphor for Lists, although now keys can be of any type, and items don't have a specific order:
 
@@ -254,7 +254,7 @@ _Lua_
 
 ---
 
-#### Functions
+##### Functions
 
 In Lua, all functions are anonymous, so Snap-like lambda syntax fits perfectly. However, Lua seems to have small syntactical inconsistencies regarding anonymous functions that we will need to work around somehow.
 
@@ -305,21 +305,24 @@ Blocks under this category trigger hardware responses into the WhiteCat board. T
 
 Under this category we find all blocks that allow the board to communicate with the outside world (in both ways) via different protocols and technologies. The Lua counterpart is still being worked on.
 
-#### MQTT
+##### MQTT
 
 * ``!when I receive an MQTT (message) at topic < >!`` Subscribes to a topic and allows to use any message received as an upvar.
 * ``!when I receive MQTT message < > at topic < >!`` Subscribes to a topic and checks for a particular message.
 * ``[send MQTT message < > with topic < >]`` Sends a message with a particular topic
 * ``[set MQTT broker to URL < >]`` All of the blocks above use a default MQTT broker set up exclusively for the WhiteCat project. It is however possible to choose a different broker programmatically.
 
-#### HTTP
+##### HTTP
 * ``([GET v] at http://< > with parameters < >)`` Issues a REST query, to choose from the dropdown list, to the specified server and retrieves its response.
 
-#### WebSockets
+##### WebSockets
 * ``(open webSocket at ws://< >)`` Instanciates a socket at a particular URL. You should assign this to a variable if you want to work with it.
 * ``[send < > over webSocket < >]`` Sends a message over a webSocket instance.
 * ``!when I receive a (message) from webSocket < >!`` Subscribes to a particular webSocket and allows to use any message received as an upvar.
 * ``!when I receive message < > from webSocket < >!`` Subscribes to a particular webSocket and checks for a particluar message.
 
-#### GPRS
+##### GPRS
+TBD
+
+##### CanBUS
 TBD
