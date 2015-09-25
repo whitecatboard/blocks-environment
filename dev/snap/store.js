@@ -1550,29 +1550,6 @@ SpriteMorph.prototype.toXML = function (serializer) {
     );
 };
 
-Costume.prototype[XML_Serializer.prototype.mediaDetectionProperty] = true;
-
-Costume.prototype.toXML = function (serializer) {
-    return serializer.format(
-        '<costume name="@" center-x="@" center-y="@" image="@" ~/>',
-        this.name,
-        this.rotationCenter.x,
-        this.rotationCenter.y,
-        this instanceof SVG_Costume ?
-                this.contents.src : this.contents.toDataURL('image/png')
-    );
-};
-
-Sound.prototype[XML_Serializer.prototype.mediaDetectionProperty] = true;
-
-Sound.prototype.toXML = function (serializer) {
-    return serializer.format(
-        '<sound name="@" sound="@" ~/>',
-        this.name,
-        this.toDataURL()
-    );
-};
-
 VariableFrame.prototype.toXML = function (serializer) {
     var myself = this;
     return Object.keys(this.vars).reduce(function (vars, v) {

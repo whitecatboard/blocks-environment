@@ -151,7 +151,7 @@ SpriteMorph.prototype.categories =
         'control',
         'operators',
         'data',
-        'input/output',
+        'input / output',
         'custom'
     ];
 

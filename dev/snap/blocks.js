@@ -8075,9 +8075,6 @@ SymbolMorph.prototype.drawNew = function () {
 
 SymbolMorph.prototype.symbolCanvasColored = function (aColor) {
     // private
-    if (this.name instanceof Costume) {
-        return this.name.thumbnail(new Point(this.symbolWidth(), this.size));
-    }
 
     var canvas = newCanvas(new Point(this.symbolWidth(), this.size));
 
@@ -8177,9 +8174,6 @@ SymbolMorph.prototype.symbolWidth = function () {
     // private
     var size = this.size;
 
-    if (this.name instanceof Costume) {
-        return (size / this.name.height()) * this.name.width();
-    }
     switch (this.name) {
     case 'pointRight':
         return Math.sqrt(size * size - Math.pow(size / 2, 2));

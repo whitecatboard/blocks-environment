@@ -846,7 +846,6 @@ IDE_Morph.prototype.snapMenu = function () {
 
     menu = new MenuMorph(this);
     menu.addItem('About...', 'aboutSnap');
-    menu.addLine();
     if (world.isDevMode) {
         menu.addLine();
         menu.addItem(
@@ -967,20 +966,6 @@ IDE_Morph.prototype.settingsMenu = function () {
             'check to run\nthe edited script\nwhen moving the slider'
         );
     }
-    addPreference(
-        'Clicking sound',
-        function () {
-            BlockMorph.prototype.toggleSnapSound();
-            if (BlockMorph.prototype.snapSound) {
-                myself.saveSetting('click', true);
-            } else {
-                myself.removeSetting('click');
-            }
-        },
-        BlockMorph.prototype.snapSound,
-        'uncheck to turn\nblock clicking\nsound off',
-        'check to turn\nblock clicking\nsound on'
-    );
     addPreference(
         'Animations',
         function () {myself.isAnimating = !myself.isAnimating; },
