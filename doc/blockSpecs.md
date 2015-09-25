@@ -31,6 +31,10 @@ We will be using the following syntax to describe blocks:
 
 Control holds blocks that modify the linear execution of a script.
 
+##### Events
+
+* ``!when %greenflag clicked!`` runs the code below when the green flag event is fired
+
 ##### Conditionals
 
 Branching and decision making.
