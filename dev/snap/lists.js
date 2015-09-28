@@ -58,7 +58,7 @@
 
 /*global modules, contains, BoxMorph, WorldMorph, HandleMorph,
 PushButtonMorph, SyntaxElementMorph, Color, Point, WatcherMorph,
-StringMorph, SpriteMorph, ScrollFrameMorph, CellMorph, ArrowMorph,
+StringMorph, BoardMorph, ScrollFrameMorph, CellMorph, ArrowMorph,
 MenuMorph, snapEquals, Morph, isNil, localize, MorphicPreferences*/
 
 modules.lists = '2015-July-27';
@@ -369,7 +369,7 @@ ListWatcherMorph.uber = BoxMorph.prototype;
 // ListWatcherMorph default settings
 
 ListWatcherMorph.prototype.cellColor =
-    SpriteMorph.prototype.blockColor.lists;
+    BoardMorph.prototype.blockColor.lists;
 
 // ListWatcherMorph instance creation:
 

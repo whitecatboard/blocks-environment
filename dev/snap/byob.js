@@ -93,7 +93,7 @@
 
 */
 
-/*global modules, CommandBlockMorph, SpriteMorph, TemplateSlotMorph,
+/*global modules, CommandBlockMorph, BoardMorph, TemplateSlotMorph,
 StringMorph, Color, DialogBoxMorph, ScriptsMorph, ScrollFrameMorph,
 Point, HandleMorph, HatBlockMorph, BlockMorph, detect, List, Process,
 AlignmentMorph, ToggleMorph, InputFieldMorph, ReporterBlockMorph,
@@ -538,7 +538,7 @@ CustomCommandBlockMorph.prototype.refreshPrototype = function () {
             this.drawNew();
         }
     }
-    myself.setCategory(hat.blockCategory || 'other');
+    myself.setCategory(hat.blockCategory || 'custom');
     hat.fixBlockColor();
 
     // update the (new) prototype's appearance
@@ -1190,7 +1190,7 @@ function BlockDialogMorph(target, action, environment) {
 BlockDialogMorph.prototype.init = function (target, action, environment) {
     // additional properties:
     this.blockType = 'command';
-    this.category = 'other';
+    this.category = 'custom';
     this.isGlobal = true;
     this.types = null;
     this.categories = null;
@@ -1212,7 +1212,7 @@ BlockDialogMorph.prototype.init = function (target, action, environment) {
     this.add(this.scopes);
 
     this.categories = new BoxMorph();
-    this.categories.color = SpriteMorph.prototype.paletteColor.lighter(8);
+    this.categories.color = BoardMorph.prototype.paletteColor.lighter(8);
     this.categories.borderColor = this.categories.color.lighter(40);
     this.createCategoryButtons();
     this.fixCategoriesLayout();
@@ -1231,7 +1231,7 @@ BlockDialogMorph.prototype.openForChange = function (
     pic,
     preventTypeChange // <bool>
 ) {
-    var clr = SpriteMorph.prototype.blockColor[category];
+    var clr = BoardMorph.prototype.blockColor[category];
     this.key = 'changeABlock';
     this.category = category;
     this.blockType = type;
@@ -1267,7 +1267,7 @@ BlockDialogMorph.prototype.createCategoryButtons = function () {
         oldFlag = Morph.prototype.trackChanges;
 
     Morph.prototype.trackChanges = false;
-    SpriteMorph.prototype.categories.forEach(function (cat) {
+    BoardMorph.prototype.categories.forEach(function (cat) {
         myself.addCategoryButton(cat);
     });
     Morph.prototype.trackChanges = oldFlag;
@@ -1277,9 +1277,9 @@ BlockDialogMorph.prototype.addCategoryButton = function (category) {
     var labelWidth = 75,
         myself = this,
         colors = [
-            SpriteMorph.prototype.paletteColor,
-            SpriteMorph.prototype.paletteColor.darker(50),
-            SpriteMorph.prototype.blockColor[category]
+            BoardMorph.prototype.paletteColor,
+            BoardMorph.prototype.paletteColor.darker(50),
+            BoardMorph.prototype.blockColor[category]
         ],
         button;
 
@@ -1364,7 +1364,7 @@ BlockDialogMorph.prototype.fixCategoriesLayout = function () {
 BlockDialogMorph.prototype.createTypeButtons = function () {
     var block,
         myself = this,
-        clr = SpriteMorph.prototype.blockColor[this.category];
+        clr = BoardMorph.prototype.blockColor[this.category];
 
 
     block = new CommandBlockMorph();
@@ -1502,7 +1502,7 @@ BlockDialogMorph.prototype.getInput = function () {
     if (def.type === 'reporter' || def.type === 'predicate') {
         body = Process.prototype.reify.call(
             null,
-            SpriteMorph.prototype.blockForSelector('doReport'),
+            BoardMorph.prototype.blockForSelector('doReport'),
             new List(),
             true // ignore empty slots for custom block reification
         );
@@ -1959,7 +1959,7 @@ PrototypeHatBlockMorph.prototype.init = function (definition) {
 
     // init inherited stuff
     HatBlockMorph.uber.init.call(this);
-    this.color = SpriteMorph.prototype.blockColor.control;
+    this.color = BoardMorph.prototype.blockColor.control;
     this.category = 'control';
     this.add(proto);
     proto.refreshPrototypeSlotTypes(); // show slot type indicators
@@ -2002,7 +2002,7 @@ PrototypeHatBlockMorph.prototype.fixBlockColor = function (
             this.alternateBlockColor();
         }
     } else if (this.category && !this.color.eq(
-            SpriteMorph.prototype.blockColor[this.category]
+            BoardMorph.prototype.blockColor[this.category]
         )) {
         this.alternateBlockColor();
     }
@@ -2501,7 +2501,7 @@ InputSlotDialogMorph.prototype.createTypeButtons = function () {
     var block,
         arrow,
         myself = this,
-        clr = SpriteMorph.prototype.blockColor[this.category];
+        clr = BoardMorph.prototype.blockColor[this.category];
 
 
     block = new JaggedBlockMorph(localize('Title text'));
@@ -3199,9 +3199,9 @@ BlockExportDialogMorph.prototype.buildContents = function () {
     palette = new ScrollFrameMorph(
         null,
         null,
-        SpriteMorph.prototype.sliderColor
+        BoardMorph.prototype.sliderColor
     );
-    palette.color = SpriteMorph.prototype.paletteColor;
+    palette.color = BoardMorph.prototype.paletteColor;
     palette.padding = padding;
     palette.isDraggable = false;
     palette.acceptsDrops = false;
@@ -3210,7 +3210,7 @@ BlockExportDialogMorph.prototype.buildContents = function () {
     // populate palette
     x = palette.left() + padding;
     y = palette.top() + padding;
-    SpriteMorph.prototype.categories.forEach(function (category) {
+    BoardMorph.prototype.categories.forEach(function (category) {
         myself.blocks.forEach(function (definition) {
             if (definition.category === category) {
                 if (lastCat && (category !== lastCat)) {
