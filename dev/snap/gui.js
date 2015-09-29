@@ -547,7 +547,6 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
     this.palette.contents.acceptsDrops = false;
 
     this.palette.reactToDropOf = function (droppedMorph) {
-        console.log(droppedMorph)
         if (droppedMorph instanceof DialogBoxMorph || droppedMorph instanceof InspectorMorph) {
             myself.world().add(droppedMorph);
         } else {

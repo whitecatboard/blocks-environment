@@ -168,48 +168,6 @@ WorldMorph.prototype.customMorphs = function () {
 
     return [];
 
-/*
-    return [
-        new SymbolMorph(
-            'pipette',
-            50,
-            new Color(250, 250, 250),
-            new Point(-1, -1),
-            new Color(20, 20, 20)
-        )
-    ];
-*/
-/*
-    var sm = new ScriptsMorph();
-    sm.setExtent(new Point(800, 600));
-
-    return [
-        new SymbolMorph(),
-        new HatBlockMorph(),
-        new CommandBlockMorph(),
-        sm,
-        new CommandSlotMorph(),
-        new CSlotMorph(),
-        new InputSlotMorph(),
-        new InputSlotMorph(null, true),
-        new BooleanSlotMorph(),
-        new ColorSlotMorph(),
-        new TemplateSlotMorph('foo'),
-        new ReporterBlockMorph(),
-        new ReporterBlockMorph(true),
-        new ArrowMorph(),
-        new MultiArgMorph(),
-        new FunctionSlotMorph(),
-        new ReporterSlotMorph(),
-        new ReporterSlotMorph(true),
-//        new DialogBoxMorph('Dialog Box'),
-//        new InputFieldMorph('Input Field')
-        new RingMorph(),
-        new RingCommandSlotMorph(),
-        new RingReporterSlotMorph(),
-        new RingReporterSlotMorph(true)
-    ];
-*/
 };
 
 
@@ -224,60 +182,6 @@ SyntaxElementMorph.prototype.constructor = SyntaxElementMorph;
 SyntaxElementMorph.uber = Morph.prototype;
 
 // SyntaxElementMorph preferences settings:
-
-/*
-    the following settings govern the appearance of all syntax elements
-    (blocks and slots) where applicable:
-
-    outline:
-
-        corner        - radius of command block rounding
-        rounding    - radius of reporter block rounding
-        edge        - width of 3D-ish shading box
-        hatHeight    - additional top space for hat blocks
-        hatWidth    - minimum width for hat blocks
-        rfBorder    - pixel width of reification border (grey outline)
-        minWidth    - minimum width for any syntax element's contents
-
-    jigsaw shape:
-
-        inset        - distance from indentation to left edge
-        dent        - width of indentation bottom
-
-    paddings:
-
-        bottomPadding    - adds to the width of the bottom most c-slot
-        cSlotPadding    - adds to the width of the open "C" in c-slots
-        typeInPadding    - adds pixels between text and edge in input slots
-        labelPadding    - adds left/right pixels to block labels
-
-    label:
-
-        labelFontName    - <string> specific font family name
-        labelFontStyle    - <string> generic font family name, cascaded
-        fontSize        - duh
-        embossing        - <Point> offset for embossing effect
-        labelWidth        - column width, used for word wrapping
-        labelWordWrap    - <bool> if true labels can break after each word
-        dynamicInputLabels - <bool> if true inputs can have dynamic labels
-
-    snapping:
-
-        feedbackColor        - <Color> for displaying drop feedbacks
-        feedbackMinHeight    - height of white line for command block snaps
-        minSnapDistance        - threshold when commands start snapping
-        reporterDropFeedbackPadding    - increases reporter drop feedback
-
-    color gradients:
-
-        contrast        - <percent int> 3D-ish shading gradient contrast
-        labelContrast    - <percent int> 3D-ish label shading contrast
-        activeHighlight    - <Color> for stack highlighting when active
-        errorHighlight    - <Color> for error highlighting
-        activeBlur        - <pixels int> shadow for blurred activeHighlight
-        activeBorder    - <pixels int> unblurred activeHighlight
-        rfColor            - <Color> for reified outlines and slot backgrounds
-*/
 
 SyntaxElementMorph.prototype.setScale = function (num) {
     var scale = Math.min(Math.max(num, 1), 25);
@@ -1096,6 +1000,16 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             break;
         case '%p':
             part = new ReporterSlotMorph(true);
+            break;
+        case '%greenflag':
+            part = new SymbolMorph('flag');
+            part.size = this.fontSize * 1.5;
+            part.color = new Color(0, 200, 0);
+            part.isProtectedLabel = true; // doesn't participate in zebraing
+            part.shadowColor = this.color.darker(this.labelContrast);
+            part.shadowOffset = MorphicPreferences.isFlat ?
+                    new Point() : this.embossing;
+            part.drawNew();
             break;
         default:
             nop();
