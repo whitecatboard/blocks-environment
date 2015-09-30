@@ -381,9 +381,45 @@ BoardMorph.prototype.init = function () {
     this.blocksCache = {}; // not to be serialized (!)
     this.paletteCache = {}; // not to be serialized (!)
     this.idx = 0; // not to be serialized (!) - used for de-serialization
+    
+    this.coroutines = [];
 
     BoardMorph.uber.init.call(this);
 };
+
+// Coroutine handling
+
+BoardMorph.prototype.addCoroutine = function(body) {
+    var coroutine, 
+        id = 0;
+
+    if (this.coroutines.length > 0) {
+        id = this.coroutines[this.coroutines.length - 1].id + 1;
+    }
+
+    coroutine = new Coroutine(id, body);
+    this.coroutines.push(coroutine);
+    return coroutine;
+}
+
+BoardMorph.prototype.removeCoroutine = function(id) {
+    var idx;
+
+    for (var i = 0; i < this.coroutines.length; i ++) {
+        if (this.coroutines[i].id == id) {
+            idx = id;
+            break;
+        }
+    }
+
+    if (idx !== null) {
+        this.coroutines.splice(idx, 1);
+    }
+}
+
+BoardMorph.prototype.clearCoroutines = function() {
+    this.coroutines = [];
+}
 
 // BoardMorph duplicating (fullCopy)
 

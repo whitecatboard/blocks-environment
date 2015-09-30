@@ -1416,22 +1416,6 @@ SyntaxElementMorph.prototype.exportPictureWithResult = function (aBubble) {
     window.open(pic.toDataURL());
 };
 
-// SyntaxElementMorph code mapping
-
-/*
-    code mapping lets you use blocks to generate arbitrary text-based
-    source code that can be exported and compiled / embedded elsewhere,
-    it's not part of Snap's evaluator and not needed for Snap itself
-*/
-
-SyntaxElementMorph.prototype.mappedCode = function (definitions) {
-    var result = this.evaluate();
-    if (result instanceof BlockMorph) {
-        return result.mappedCode(definitions);
-    }
-    return result;
-};
-
 // SyntaxElementMorph layout update optimization
 
 SyntaxElementMorph.prototype.startLayout = function () {
@@ -1753,36 +1737,6 @@ BlockMorph.prototype.userMenu = function () {
         top,
         blck;
 
-    menu.addItem(
-        "help...",
-        'showHelp'
-    );
-    if (shiftClicked) {
-        top = this.topBlock();
-        if (top instanceof ReporterBlockMorph) {
-            menu.addItem(
-                "script pic with result...",
-                function () {
-                    top.ExportResultPic();
-                },
-                'open a new window\n' +
-                    'with a picture of both\nthis script and its result',
-                new Color(100, 0, 0)
-            );
-        }
-    }
-    if (this.isTemplate) {
-        if (!(this.parent instanceof SyntaxElementMorph)) {
-            if (this.selector !== 'evaluateCustomBlock') {
-                menu.addItem(
-                    "hide",
-                    'hidePrimitive'
-                );
-            }
-        }
-        return menu;
-    }
-    menu.addLine();
     if (this.selector === 'reportGetVar') {
         blck = this.fullCopy();
         blck.addShadow();
@@ -1858,13 +1812,6 @@ BlockMorph.prototype.userMenu = function () {
     menu.addItem(
         "delete",
         'userDestroy'
-    );
-    menu.addItem(
-        "script pic...",
-        function () {
-            window.open(myself.topBlock().fullImage().toDataURL());
-        },
-        'open a new window\nwith a picture of this script'
     );
     if (proc) {
         if (vNames.length) {
@@ -2074,49 +2021,6 @@ BlockMorph.prototype.restoreInputs = function (oldInputs) {
         i += 1;
     });
     this.cachedInputs = null;
-};
-
-BlockMorph.prototype.showHelp = function () {
-    var myself = this,
-        pic = new Image(),
-        help,
-        comment,
-        block,
-        isCustomBlock = this.selector === 'evaluateCustomBlock',
-        spec = isCustomBlock ?
-                this.definition.helpSpec() : this.selector,
-        ctx;
-
-    pic.onload = function () {
-        help = newCanvas(new Point(pic.width, pic.height));
-        ctx = help.getContext('2d');
-        ctx.drawImage(pic, 0, 0);
-        new DialogBoxMorph().inform(
-            'Help',
-            null,
-            myself.world(),
-            help
-        );
-    };
-
-    if (isCustomBlock && this.definition.comment) {
-        block = this.fullCopy();
-        block.addShadow();
-        comment = this.definition.comment.fullCopy();
-        comment.contents.parse();
-        help = '';
-        comment.contents.lines.forEach(function (line) {
-            help = help + '\n' + line;
-        });
-        new DialogBoxMorph().inform(
-            'Help',
-            help.substr(1),
-            myself.world(),
-            block.fullImage()
-        );
-    } else {
-        pic.src = 'help/' + spec + '.png';
-    }
 };
 
 // BlockMorph drawing
