@@ -429,6 +429,7 @@ IDE_Morph.prototype.createBoard = function () {
     this.add(this.board);
     this.board.setLeft(100);
     this.board.setTop(100);
+    this.board.hide();
 }
 
 IDE_Morph.prototype.createCategories = function () {
@@ -1227,8 +1228,6 @@ IDE_Morph.prototype.newProject = function () {
     this.setProjectName('');
     this.projectNotes = '';
     this.createBoard();
-    this.add(this.board);
-    this.createCorral();
     this.fixLayout();
 };
 
@@ -1416,7 +1415,7 @@ IDE_Morph.prototype.createNewProject = function () {
     this.confirm(
         'Replace the current project with a new one?',
         'New Project',
-        function () {myself.newProject(); }
+        function () { myself.newProject(); }
     );
 };
 
