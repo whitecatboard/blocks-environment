@@ -421,6 +421,13 @@ BoardMorph.prototype.clearCoroutines = function() {
     this.coroutines = [];
 }
 
+BoardMorph.prototype.buildCoroutines = function() {
+    var myself = this;
+    this.scripts.children.forEach(function(topBlock) {
+        myself.addCoroutine(topBlock.asCoroutine());
+    })
+}
+
 // BoardMorph duplicating (fullCopy)
 
 BoardMorph.prototype.fullCopy = function () {

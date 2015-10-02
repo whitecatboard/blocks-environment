@@ -2383,8 +2383,7 @@ BlockMorph.prototype.mouseClickLeft = function () {
              * Each script is a coroutine.
              * Then we push it all to the board and tell it to fire the coroutine that "top" holds.
              */
-
-            //board.threads.toggleProcess(top);
+            board.buildCoroutines();
         }
     }
 
