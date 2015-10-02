@@ -423,8 +423,9 @@ BoardMorph.prototype.clearCoroutines = function() {
 
 BoardMorph.prototype.buildCoroutines = function() {
     var myself = this;
+    this.clearCoroutines();
     this.scripts.children.forEach(function(topBlock) {
-        myself.addCoroutine(topBlock.asCoroutine());
+        myself.addCoroutine(new LuaExpression(topBlock));
     })
 }
 

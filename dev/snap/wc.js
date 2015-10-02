@@ -60,7 +60,7 @@ LuaExpression.prototype.init = function(block) {
 }
 
 LuaExpression.prototype.doForever = function (body) {
-    this.opening = 'while (true) do';
+    this.opening = 'while (true) do\n';
     // do something with body?
     this.closing = 'end';
 };
