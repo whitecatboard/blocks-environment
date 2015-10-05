@@ -138,12 +138,12 @@ BoardMorph.prototype.initBlocks = function () {
         doIf: {
             type: 'command',
             category: 'control',
-            spec: 'if %b %c'
+            spec: 'if %s %c'
         },
         doIfElse: {
             type: 'command',
             category: 'control',
-            spec: 'if %b %c else %c'
+            spec: 'if %s %c else %c'
         },
         doStopThis: {
             type: 'command',
@@ -216,11 +216,6 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'operators',
             spec: '%n / %n' // '%n \u00F7 %n'
         },
-        reportRound: {
-            type: 'reporter',
-            category: 'operators',
-            spec: 'round %n'
-        },
         reportMonadic: {
             type: 'reporter',
             category: 'operators',
@@ -256,17 +251,17 @@ BoardMorph.prototype.initBlocks = function () {
         reportAnd: {
             type: 'reporter',
             category: 'operators',
-            spec: '%b and %b'
+            spec: '%s and %s'
         },
         reportOr: {
             type: 'reporter',
             category: 'operators',
-            spec: '%b or %b'
+            spec: '%s or %s'
         },
         reportNot: {
             type: 'reporter',
             category: 'operators',
-            spec: 'not %b'
+            spec: 'not %s'
         },
         reportTrue: {
             type: 'reporter',
@@ -283,12 +278,6 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'operators',
             spec: 'join %words',
             defaults: [localize('hello') + ' ', localize('world')]
-        },
-        reportTextSplit: {
-            type: 'reporter',
-            category: 'operators',
-            spec: 'split %s by %delim',
-            defaults: [localize('hello') + ' ' + localize('world'), " "]
         },
 
         // Variables
@@ -549,7 +538,6 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('reportQuotient'));
         blocks.push('-');
         blocks.push(block('reportModulus'));
-        blocks.push(block('reportRound'));
         blocks.push(block('reportMonadic'));
         blocks.push(block('reportRandom'));
         blocks.push('-');
@@ -565,7 +553,6 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('reportFalse'));
         blocks.push('-');
         blocks.push(block('reportJoinWords'));
-        blocks.push(block('reportTextSplit'));
 
     /////////////////////////////////
 

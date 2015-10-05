@@ -1350,12 +1350,6 @@ SyntaxElementMorph.prototype.showBubble = function (value, exportPic) {
         morphToShow.silentSetWidth(img.width);
         morphToShow.silentSetHeight(img.height);
         morphToShow.image = img;
-    } else if (value instanceof Context) {
-        img = value.image();
-        morphToShow = new Morph();
-        morphToShow.silentSetWidth(img.width);
-        morphToShow.silentSetHeight(img.height);
-        morphToShow.image = img;
     } else if (typeof value === 'boolean') {
         morphToShow = BoardMorph.prototype.booleanMorph.call(
             null,
@@ -1736,6 +1730,23 @@ BlockMorph.prototype.userMenu = function () {
         alternatives,
         top,
         blck;
+
+    menu.addItem(
+            'Print in Lua',
+            function() {
+                exp = new LuaExpression(myself);
+                myself.showBubble(exp);
+                console.log(exp.toString());
+            }
+            );
+    menu.addItem(
+            'My Selector',
+            function() {
+                myself.showBubble(myself.selector)
+            }
+            );
+
+    menu.addLine();
 
     if (this.selector === 'reportGetVar') {
         blck = this.fullCopy();
