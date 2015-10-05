@@ -303,6 +303,32 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'reporter',
             category: 'data',
             spec: 'table %exp'
+        },
+
+        // Input/Output
+        setPinDigital: {
+            type: 'command',
+            category: 'input / output',
+            spec: 'set pin %n to digital %s',
+            defaults: [3, true]
+        },
+        setPinAnalog: {
+            type: 'command',
+            category: 'input / output',
+            spec: 'set pin %n to analog %s',
+            defaults: [4, 128]
+        },
+        getPinDigital: {
+            type: 'reporter',
+            category: 'input / output',
+            spec: 'get digital value from pin %n',
+            defaults: [5]
+        },
+        getPinAnalog: {
+            type: 'reporter',
+            category: 'input / output',
+            spec: 'get analog value from pin %n',
+            defaults: [6]
         }
     };
 };
@@ -373,12 +399,28 @@ BoardMorph.prototype.init = function () {
     
     this.coroutines = [];
 
+    this.serialConnect('/dev/ttyUSB0', 115200);
+
     BoardMorph.uber.init.call(this);
 };
 
+BoardMorph.prototype.serialConnect = function(port, baudrate) {
+    var serialLib = require('serialport'),
+        SerialPort = serialLib.SerialPort,
+        myself = this;
+
+    this.serialPort = new SerialPort(port, { baudrate: baudrate });
+
+    this.serialPort.on('open', function () {
+        myself.serialPort.on('data', function(data) {
+//            console.log('data received: ' + data);
+        });
+    });
+}
+
 // Coroutine handling
 
-BoardMorph.prototype.addCoroutine = function(body) {
+BoardMorph.prototype.addCoroutine = function(body, topBlock) {
     var coroutine, 
         id = 0;
 
@@ -386,7 +428,7 @@ BoardMorph.prototype.addCoroutine = function(body) {
         id = this.coroutines[this.coroutines.length - 1].id + 1;
     }
 
-    coroutine = new Coroutine(id, body);
+    coroutine = new Coroutine(id, body, topBlock);
     this.coroutines.push(coroutine);
     return coroutine;
 }
@@ -410,12 +452,28 @@ BoardMorph.prototype.clearCoroutines = function() {
     this.coroutines = [];
 }
 
-BoardMorph.prototype.buildCoroutines = function() {
-    var myself = this;
+BoardMorph.prototype.buildCoroutines = function(origin) {
+    // Build all coroutines based on the block stacks on the scripts canvas
+    // Fire up the coroutine that corresponds with origin
+
+    var myself = this,
+        luaScript = '';
+
     this.clearCoroutines();
     this.scripts.children.forEach(function(topBlock) {
-        myself.addCoroutine(new LuaExpression(topBlock));
+
+        var coroutine = myself.addCoroutine(new LuaExpression(topBlock));
+        luaScript += coroutine.body + '\n';
+
+        if (topBlock == origin) {
+            luaScript += 'coroutine.resume(co' + coroutine.id + ')\n'
+        };
     })
+
+    luaScript += '\n\r';
+
+    this.serialPort.write(luaScript);
+
 }
 
 // BoardMorph duplicating (fullCopy)
@@ -554,8 +612,6 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
         blocks.push(block('reportJoinWords'));
 
-    /////////////////////////////////
-
     } else if (cat === 'data') {
 
         blocks.push(block('doSetVar'));
@@ -595,6 +651,14 @@ BoardMorph.prototype.blockTemplates = function (category) {
         button.selector = 'addCustomBlock';
         button.showHelp = BlockMorph.prototype.showHelp;
         blocks.push(button);
+    } else if (cat === 'input / output') {
+
+        blocks.push(block('setPinDigital'));
+        blocks.push(block('setPinAnalog'));
+        blocks.push('-');
+        blocks.push(block('getPinDigital'));
+        blocks.push(block('getPinAnalog'));
+
     }
     return blocks;
 };

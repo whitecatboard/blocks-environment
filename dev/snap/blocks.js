@@ -2379,7 +2379,8 @@ BlockMorph.prototype.mouseClickLeft = function () {
     var top = this.topBlock(),
         receiver = top.receiver(),
         shiftClicked = this.world().currentKey === 16,
-        board;
+        board,
+        coroutine;
 
     if (shiftClicked && !this.isTemplate) {
         return this.focus();
@@ -2390,11 +2391,11 @@ BlockMorph.prototype.mouseClickLeft = function () {
     if (receiver) {
         board = receiver.parentThatIsA(IDE_Morph).board;
         if (board) {
-            /* We should take ALL scripts in the scripting area and translate them into Lua.
-             * Each script is a coroutine.
-             * Then we push it all to the board and tell it to fire the coroutine that "top" holds.
+            /* We take ALL scripts in the scripting area and translate them into Lua.
+             * Each script maps to a coroutine.
+             * buildCoroutines() pushes it all to the board and tells it to fire the coroutine that "top" holds.
              */
-            board.buildCoroutines();
+            board.buildCoroutines(top);
         }
     }
 

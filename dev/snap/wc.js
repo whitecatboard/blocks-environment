@@ -1,14 +1,19 @@
-/*
-serialLib = require('serialport');
-SerialPort = serialLib.SerialPort;
-serialPort = new SerialPort('/dev/ttyUSB0', { baudrate: 115200 });
+// Global utils
 
-serialPort.on('open', function () {
-    serialPort.on('data', function(data) {
-        console.log('data received: ' + data);
-    });
-});
-*/
+function toHighLow(value) {
+    return toBool(value) ? 'high' : 'low'
+}
+
+function toBool(value) {
+    var val = value;
+
+    if (typeof value == 'string') {
+        val = value.toLowerCase();
+    }
+
+    return (val == 'true' || val == 1 || val == 'high')
+}
+
 var Coroutine;
 
 Coroutine.prototype = {};
@@ -19,13 +24,14 @@ function Coroutine(id, body) {
     this.init(id, body);
 }
 
-Coroutine.prototype.init = function(id, body) {
+Coroutine.prototype.init = function(id, body, block) {
     this.id = id;
     this.body = 'co' + id  + ' = ' + this.wrap(body);
+    this.topBlock = block;
 }
 
 Coroutine.prototype.wrap = function(body) {
-    return 'coroutine.create(function()\n\t' + body + '\nend)';
+    return 'coroutine.create(function()\n' + body + '\nend)';
 }
 
 // LuaExpression 
@@ -247,3 +253,8 @@ LuaExpression.prototype.reportJoinWords = function () {
 
 //// Input/Output
 
+LuaExpression.prototype.setPinDigital = function(pin, value) {
+    this.opening = 'pio.pin.set' + toHighLow(value) + '(';
+    this.body = 'pio.PB_' + pin;
+    this.closing = ')'
+}
