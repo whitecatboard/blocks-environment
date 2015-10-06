@@ -2395,7 +2395,7 @@ BlockMorph.prototype.mouseClickLeft = function () {
              * Each script maps to a coroutine.
              * buildCoroutines() pushes it all to the board and tells it to fire the coroutine that "top" holds.
              */
-            board.buildCoroutines(top);
+            board.buildCoroutines([top]);
         }
     }
 

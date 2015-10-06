@@ -310,7 +310,7 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'input / output',
             spec: 'set pin %n to digital %s',
-            defaults: [3, true]
+            defaults: [1, true]
         },
         setPinAnalog: {
             type: 'command',
@@ -348,10 +348,6 @@ BoardMorph.prototype.initBlockMigrations = function () {
         doStopBlock: {
             selector: 'doStopThis',
             inputs: [['this block']]
-        },
-        receiveClick: {
-            selector: 'receiveInteraction',
-            inputs: [['clicked']]
         }
     };
 };
@@ -410,12 +406,39 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
         myself = this;
 
     this.serialPort = new SerialPort(port, { baudrate: baudrate });
-
     this.serialPort.on('open', function () {
         myself.serialPort.on('data', function(data) {
 //            console.log('data received: ' + data);
         });
     });
+
+    // PinOut depends on the board
+    // For now we're supporting the WhiteCat board, but adding a menu
+    // option for other boards is trivial
+    this.loadPinOut('whitecat');
+}
+
+BoardMorph.prototype.loadPinOut = function(boardName) {
+    var myself = this,
+        fs = require('fs');
+
+    fs.readFile('boards/' + boardName + '.json', function(error, data) {
+        if (error) {
+            myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not find pinout specs file for\n' 
+                + boardName + ' board. Input / output blocks\nare not going to work!');
+        } else {
+            try {
+                myself.pinOut = JSON.parse(data);
+            } catch (error) {
+                myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not parse pinout specs file for\n' 
+                    + boardName + ' board. Input / output blocks\nare not going to work!');
+            }
+        }
+    });
+}
+
+BoardMorph.prototype.stopAll = function() {
+    this.serialPort.write('\n\r');
 }
 
 // Coroutine handling
@@ -434,43 +457,47 @@ BoardMorph.prototype.addCoroutine = function(body, topBlock) {
 }
 
 BoardMorph.prototype.removeCoroutine = function(id) {
-    var idx;
+    var index;
 
     for (var i = 0; i < this.coroutines.length; i ++) {
         if (this.coroutines[i].id == id) {
-            idx = id;
+            index = id;
             break;
         }
     }
 
-    if (idx !== null) {
-        this.coroutines.splice(idx, 1);
+    if (index !== null) {
+        this.coroutines.splice(index, 1);
     }
 }
 
 BoardMorph.prototype.clearCoroutines = function() {
     this.coroutines = [];
+    this.stopAll();
 }
 
-BoardMorph.prototype.buildCoroutines = function(origin) {
+BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     // Build all coroutines based on the block stacks on the scripts canvas
     // Fire up the coroutine that corresponds with origin
 
     var myself = this,
-        luaScript = '';
+        coroutinesToRun = [],
+        luaScript = '',
+        closing = '';
 
     this.clearCoroutines();
     this.scripts.children.forEach(function(topBlock) {
 
-        var coroutine = myself.addCoroutine(new LuaExpression(topBlock));
+        var coroutine = myself.addCoroutine(new LuaExpression(topBlock, myself));
         luaScript += coroutine.body + '\n\r';
 
-        if (topBlock == origin) {
-            luaScript += 'coroutine.resume(co' + coroutine.id + ')\n\r'
+        if (topBlocksToRun.indexOf(topBlock) > -1) {
+            coroutinesToRun.push(coroutine);
         };
     })
 
-    luaScript += '\n\r';
+    closing += new Scheduler(coroutinesToRun);
+    luaScript += '\n\r' + closing;
     this.serialPort.write(luaScript);
 }
 

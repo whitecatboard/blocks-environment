@@ -688,25 +688,11 @@ IDE_Morph.prototype.pressStart = function () {
 };
 
 IDE_Morph.prototype.fireGreenFlagEvent = function () {
-    var procs = [],
-        hats = [];
-
-    this.children.concat(this).forEach(function (morph) {
-        if (morph instanceof BoardMorph) {
-            hats = hats.concat(morph.allHatBlocksFor('__shout__go__'));
-        }
-    });
-    hats.forEach(function (block) {
-            // WhiteCat ToDo        
-    });
-    return procs;
+    this.board.buildCoroutines(this.board.allHatBlocksFor('__shout__go__'));
 };
 
 IDE_Morph.prototype.fireStopAllEvent = function () {
-    this.threads.stopAll();
-    this.children.forEach(function (morph) {
-        // WhiteCat ToDo
-    });
+    this.board.stopAll();
 };
 
 IDE_Morph.prototype.runScripts = function () {

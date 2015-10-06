@@ -14,24 +14,56 @@ function toBool(value) {
     return (val == 'true' || val == 1 || val == 'high')
 }
 
+// Coroutines map into Lua coroutines
 var Coroutine;
 
 Coroutine.prototype = {};
 Coroutine.prototype.constructor = Coroutine;
 Coroutine.uber = Object.prototype;
 
-function Coroutine(id, body) {
-    this.init(id, body);
+function Coroutine(id, body, topBlock) {
+    this.init(id, body, topBlock);
 }
 
-Coroutine.prototype.init = function(id, body, block) {
+Coroutine.prototype.init = function(id, body, topBlock) {
     this.id = id;
     this.body = 'co' + id  + ' = ' + this.wrap(body);
-    this.topBlock = block;
+    this.topBlock = topBlock;
 }
 
 Coroutine.prototype.wrap = function(body) {
     return 'coroutine.create(function()\n\r' + body + '\n\rend)';
+}
+
+// Scheduler handles coroutine threads
+var Scheduler;
+
+Scheduler.prototype = {};
+Scheduler.prototype.constructor = Scheduler;
+Scheduler.uber = Object.prototype;
+
+function Scheduler(coroutines) {
+    this.init(coroutines);
+}
+
+Scheduler.prototype.init = function(coroutines) {
+    var myself = this;
+
+    this.coroutines = coroutines;
+    this.header = 'while ';
+    this.body = '';
+
+    this.coroutines.forEach(function(coroutine) {
+        myself.header += 'coroutine.status(co' + coroutine.id + ') ~= "dead" or '
+        myself.body += 'if coroutine.status(co' + coroutine.id + ') ~= "dead" then coroutine.resume(co' + coroutine.id + ') end\n\r';
+    });
+
+    this.header += 'false do\n\r';
+    this.body += '\n\rend\n\r';
+}
+
+Scheduler.prototype.toString = function() {
+    return this.header + this.body
 }
 
 // LuaExpression 
@@ -41,18 +73,19 @@ LuaExpression.prototype = {};
 LuaExpression.prototype.constructor = LuaExpression;
 LuaExpression.uber = Object.prototype;
 
-function LuaExpression(block) {
-    this.init(block)
+function LuaExpression(topBlock, board) {
+    this.init(topBlock, board)
 }
 
-LuaExpression.prototype.init = function(block) {
-    var args = [];
+LuaExpression.prototype.init = function(topBlock, board) {
+    var args = [],
+        nextBlock = topBlock.nextBlock();
 
-    this.block = block;
-
+    this.topBlock = topBlock;
     this.code = '';
+    this.board = board;
 
-    if (!block) { return };
+    if (!topBlock) { return };
 
     function translateInput(input) {
         if (input instanceof InputSlotMorph) {
@@ -60,19 +93,25 @@ LuaExpression.prototype.init = function(block) {
             args.push(input.contents().text);
         } else if (input instanceof CSlotMorph) {
             // If it's a CSlotMorph, get its nested block
-            args.push(new LuaExpression(input.nestedBlock()));
+            args.push(new LuaExpression(input.nestedBlock(), board));
         } else if (input instanceof MultiArgMorph) {
             // If it's a variadic input, let's recursivelly traverse its inputs
             input.inputs().forEach(function(each) { translateInput(each) });
         } else {
             // Otherwise, it's a reporter, so we need to translate it into a LuaExpression 
-            args.push(new LuaExpression(input));
+            args.push(new LuaExpression(input, board));
         }
     }
 
-    block.inputs().forEach(function(each) { translateInput(each) });
+    topBlock.inputs().forEach(function(each) { translateInput(each) });
 
-    this[block.selector].apply(this, args);
+    this[topBlock.selector].apply(this, args);
+
+    this.code += 'coroutine.yield()\n\r';
+
+    if (nextBlock) {
+        this.code += (new LuaExpression(nextBlock, board)).toString();
+    }
 }
 
 LuaExpression.prototype.toString = function() {
@@ -93,11 +132,11 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\n\r' + body + '\n\rend\n\r';
+    this.code = 'while (true) do\n\r' + body + '\n\rcoroutine.yield()\n\rend\n\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\n\r' + body + '\n\rend\n\r';
+    this.code = 'for i=1,' + times + ' do\n\r' + body + '\n\rcoroutine.yield()\n\rend\n\r';
 };
 
 // Conditionals
@@ -117,7 +156,8 @@ LuaExpression.prototype.doReport = function (body) {
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    // tmr.delay expects an id (nil) and a value in ns
+    // WRONG! We have to implement wait ourselves
+    // See http://www.eluaproject.net/doc/v0.9/en_refman_gen_tmr.html#tmr.getdiffnow
     this.code = 'tmr.delay(nil, ' + secs + ' * 1000000)\n\r';
 }
 
@@ -211,6 +251,5 @@ LuaExpression.prototype.reportJoinWords = function () {
 //// Input/Output
 
 LuaExpression.prototype.setPinDigital = function(pin, value) {
-    // pin mapping should be read from a JSON file depending on the board
-    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.PB_' + pin + ')\n\r'
+    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.' + this.board.pinOut.digitalOutput[pin] + ')\n\r'
 }
