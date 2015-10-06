@@ -31,7 +31,7 @@ Coroutine.prototype.init = function(id, body, block) {
 }
 
 Coroutine.prototype.wrap = function(body) {
-    return 'coroutine.create(function()\n' + body + '\nend)';
+    return 'coroutine.create(function()\n\r' + body + '\n\rend)';
 }
 
 // LuaExpression 
@@ -93,32 +93,32 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\n' + body + '\nend';
+    this.code = 'while (true) do\n\r' + body + '\n\rend\n\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\n' + body + '\nend';
+    this.code = 'for i=1,' + times + ' do\n\r' + body + '\n\rend\n\r';
 };
 
 // Conditionals
 
 LuaExpression.prototype.doIf = function (condition, body) {
-    this.code = 'if ' + condition + ' then\n' + body + 'end';
+    this.code = 'if ' + condition + ' then\n\r' + body + 'end\n\r';
 }
 
 LuaExpression.prototype.doIfElse = function (condition, trueBody, falseBody) {
-    this.code = 'if ' + condition + ' then\n' + trueBody + '\nelse\n' + falseBody + '\nend';
+    this.code = 'if ' + condition + ' then\n\r' + trueBody + '\n\relse\n\r' + falseBody + '\n\rend\n\r';
 }
 
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'return ' + body;
+    this.code = 'return ' + body + '\n\r';
 }
 
 LuaExpression.prototype.doWait = function (secs) {
     // tmr.delay expects an id (nil) and a value in ns
-    this.code = 'tmr.delay(nil, ' + secs + ' * 1000000)';
+    this.code = 'tmr.delay(nil, ' + secs + ' * 1000000)\n\r';
 }
 
 
@@ -211,5 +211,6 @@ LuaExpression.prototype.reportJoinWords = function () {
 //// Input/Output
 
 LuaExpression.prototype.setPinDigital = function(pin, value) {
-    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.PB_' + pin + ')'
+    // pin mapping should be read from a JSON file depending on the board
+    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.PB_' + pin + ')\n\r'
 }

@@ -463,17 +463,15 @@ BoardMorph.prototype.buildCoroutines = function(origin) {
     this.scripts.children.forEach(function(topBlock) {
 
         var coroutine = myself.addCoroutine(new LuaExpression(topBlock));
-        luaScript += coroutine.body + '\n';
+        luaScript += coroutine.body + '\n\r';
 
         if (topBlock == origin) {
-            luaScript += 'coroutine.resume(co' + coroutine.id + ')\n'
+            luaScript += 'coroutine.resume(co' + coroutine.id + ')\n\r'
         };
     })
 
     luaScript += '\n\r';
-
     this.serialPort.write(luaScript);
-
 }
 
 // BoardMorph duplicating (fullCopy)
