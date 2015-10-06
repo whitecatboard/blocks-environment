@@ -50,11 +50,7 @@ LuaExpression.prototype.init = function(block) {
 
     this.block = block;
 
-    // Is this the best approach?
-    // The division into three items seems arbitrary in many cases
-    this.opening = '';
-    this.body = '';
-    this.closing = '';
+    this.code = '';
 
     if (!block) { return };
 
@@ -80,10 +76,10 @@ LuaExpression.prototype.init = function(block) {
 }
 
 LuaExpression.prototype.toString = function() {
-    return this.opening + this.body + this.closing;
+    return this.code;
 }
 
-/////////////// Lua equivalences ////////////////////
+/////////////// Lua generation ////////////////////
 
 //// Control
 
@@ -97,156 +93,117 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.opening = 'while (true) do\n';
-    this.body = body;
-    this.closing = '\nend';
+    this.code = 'while (true) do\n' + body + '\nend';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.opening = 'for i=1,' + times + ' do\n';
-    this.body = body;
-    this.closing = '\nend';
+    this.code = 'for i=1,' + times + ' do\n' + body + '\nend';
 };
 
 // Conditionals
 
 LuaExpression.prototype.doIf = function (condition, body) {
-    this.opening = 'if ' + condition + ' then\n';
-    this.body = body;
-    this.closing = 'end';
+    this.code = 'if ' + condition + ' then\n' + body + 'end';
 }
 
-LuaExpression.prototype.doIfElse = function (condition, body, elseBody) {
-    this.opening = 'if ' + condition + ' then\n';
-    this.body = body;
-    this.closing = '\nelse\n' + elseBody + '\nend';
+LuaExpression.prototype.doIfElse = function (condition, trueBody, falseBody) {
+    this.code = 'if ' + condition + ' then\n' + trueBody + '\nelse\n' + falseBody + '\nend';
 }
 
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.opening = 'return ';
-    this.body = body;
-    this.closing = '';
+    this.code = 'return ' + body;
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    this.opening = 'tmr.delay(';
     // tmr.delay expects an id (nil) and a value in ns
-    this.body = 'nil, ' + secs + ' * 1000000';
-    this.closing = ')';
+    this.code = 'tmr.delay(nil, ' + secs + ' * 1000000)';
 }
 
 
 //// Operators
 
 LuaExpression.prototype.reportSum = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' + ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' + ' + b + ')';
 }
 
 LuaExpression.prototype.reportDifference = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' - ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' - ' + b + ')';
 }
 
 LuaExpression.prototype.reportProduct = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' * ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' * ' + b + ')';
 }
 
 LuaExpression.prototype.reportQuotient = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' / ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' / ' + b + ')';
 }
 
 LuaExpression.prototype.reportModulus = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' % ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' % ' + b + ')';
 }
 
 LuaExpression.prototype.reportMonadic = function (func, a) {
     var specialFunctions = { ln: 'log', log: 'log10', 'e^': 'math.exp', '10^': '10^' };
 
-    this.opening = '(';
+    this.code = '(';
 
     if (specialFunctions.hasOwnProperty(func)) {
-        this.opening += specialFunctions[func];
+        this.code += specialFunctions[func];
     } else {
-        this.opening += 'math.' + func;
+        this.code += 'math.' + func;
     }
 
-    this.opening += '(';
-    this.body = a;
-    this.closing = '))';
+    this.code += '(' + a + '))';
 }
 
 LuaExpression.prototype.reportRandom = function (a, b) {
-    this.opening = '(math.random(';
-    this.body = a + ',' + b;
-    this.closing = '))';
+    this.code = '(math.random(' + a + ',' + b + '))';
 }
 
 LuaExpression.prototype.reportLessThan = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' < ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' < ' + b + ')';
 }
 
 LuaExpression.prototype.reportEquals = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' == ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' == ' + b + ')';
 }
 
 LuaExpression.prototype.reportGreaterThan = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' > ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' > ' + b + ')';
 }
 
 LuaExpression.prototype.reportAnd = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' and ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' and ' + b + ')';
 }
 
 LuaExpression.prototype.reportOr = function (a, b) {
-    this.opening = '(' + a;
-    this.body = ' or ';
-    this.closing = b + ')';
+    this.code = '(' + a + ' or ' + b + ')';
 }
 
 LuaExpression.prototype.reportNot = function (a) {
-    this.opening = '(not ';
-    this.body = a;
-    this.closing = ')';
+    this.code = '(not ' + a + ')';
 }
 
 LuaExpression.prototype.reportTrue = function () {
-    this.body = 'true';
+    this.code = 'true';
 }
 
 LuaExpression.prototype.reportFalse = function () {
-    this.body = 'false';
+    this.code = 'false';
 }
 
 LuaExpression.prototype.reportJoinWords = function () {
     var myself = this;
 
-    this.opening = '(';
-    this.body = '\'\'';
+    this.code = '(\'\'';
 
     (Array.prototype.slice.call(arguments)).forEach(function(eachWord) {
-        myself.body += '.. \'' + eachWord + '\''
+        myself.code += '.. \'' + eachWord + '\''
     });
 
-    this.closing = ')';
+    this.code += ')';
 }
 
 //// Data
@@ -254,7 +211,5 @@ LuaExpression.prototype.reportJoinWords = function () {
 //// Input/Output
 
 LuaExpression.prototype.setPinDigital = function(pin, value) {
-    this.opening = 'pio.pin.set' + toHighLow(value) + '(';
-    this.body = 'pio.PB_' + pin;
-    this.closing = ')'
+    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.PB_' + pin + ')'
 }
