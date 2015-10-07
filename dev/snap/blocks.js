@@ -1734,7 +1734,7 @@ BlockMorph.prototype.userMenu = function () {
     menu.addItem(
             'Print in Lua',
             function() {
-                exp = new LuaExpression(myself);
+                exp = new LuaExpression(myself, myself.receiver());
                 myself.showBubble(exp);
                 console.log(exp.toString());
             }

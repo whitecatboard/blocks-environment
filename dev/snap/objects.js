@@ -29,7 +29,7 @@
 
     prerequisites:
     --------------
-    needs blocks.js, threads.js, morphic.js and widgets.js
+    needs blocks.js, wc.js, morphic.js and widgets.js
 
 
     toc
@@ -46,16 +46,6 @@
             BoardBubbleMorph
 
     * defined in Morphic.js
-
-
-    credits
-    -------
-    Ian Reynolds contributed initial porting of primitives from Squeak and
-    sound handling
-    Achal Dave contributed research and prototyping for creating music
-    using the Web Audio API
-    Yuan Yuan contributed graphic effects for costumes
-
 */
 
 var BoardMorph;
@@ -80,6 +70,7 @@ BoardMorph.prototype.categories =
         'operators',
         'data',
         'input / output',
+        'comm',
         'custom'
     ];
 
@@ -88,6 +79,7 @@ BoardMorph.prototype.blockColor = {
     operators : new Color(98, 194, 19),
     data : new Color(243, 118, 29),
     'input / output' : new Color(207, 74, 217),
+    comm: new Color(130, 92, 124),
     custom : new Color(150, 150, 150)
 };
 
@@ -478,7 +470,7 @@ BoardMorph.prototype.clearCoroutines = function() {
 
 BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     // Build all coroutines based on the block stacks on the scripts canvas
-    // Fire up the coroutine that corresponds with origin
+    // Fire up the coroutines that correspond with topBlocksToRun
 
     var myself = this,
         coroutinesToRun = [],
@@ -498,7 +490,11 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
     closing += new Scheduler(coroutinesToRun);
     luaScript += '\n\r' + closing;
-    this.serialPort.write(luaScript);
+    console.log(luaScript);
+    console.log((new Date()).getMilliseconds().toString());
+    this.serialPort.write(luaScript, function() {
+        console.log((new Date()).getMilliseconds().toString());
+    });
 }
 
 // BoardMorph duplicating (fullCopy)

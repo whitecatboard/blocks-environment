@@ -27,7 +27,7 @@ function Coroutine(id, body, topBlock) {
 
 Coroutine.prototype.init = function(id, body, topBlock) {
     this.id = id;
-    this.body = 'co' + id  + ' = ' + this.wrap(body);
+    this.body = 'c' + id  + ' = ' + this.wrap(body);
     this.topBlock = topBlock;
 }
 
@@ -54,8 +54,8 @@ Scheduler.prototype.init = function(coroutines) {
     this.body = '';
 
     this.coroutines.forEach(function(coroutine) {
-        myself.header += 'coroutine.status(co' + coroutine.id + ') ~= "dead" or '
-        myself.body += 'if coroutine.status(co' + coroutine.id + ') ~= "dead" then coroutine.resume(co' + coroutine.id + ') end\n\r';
+        myself.header += 'coroutine.status(c' + coroutine.id + ') ~= "dead" or '
+        myself.body += 'if coroutine.status(c' + coroutine.id + ') ~= "dead" then coroutine.resume(c' + coroutine.id + ') end\n\r';
     });
 
     this.header += 'false do\n\r';
@@ -78,8 +78,10 @@ function LuaExpression(topBlock, board) {
 }
 
 LuaExpression.prototype.init = function(topBlock, board) {
+    if (topBlock == null) { return };
+
     var args = [],
-        nextBlock = topBlock.nextBlock();
+        nextBlock = topBlock.nextBlock ? topBlock.nextBlock() : null;
 
     this.topBlock = topBlock;
     this.code = '';
@@ -107,8 +109,6 @@ LuaExpression.prototype.init = function(topBlock, board) {
 
     this[topBlock.selector].apply(this, args);
 
-    this.code += 'coroutine.yield()\n\r';
-
     if (nextBlock) {
         this.code += (new LuaExpression(nextBlock, board)).toString();
     }
@@ -125,8 +125,7 @@ LuaExpression.prototype.toString = function() {
 // Hat Blocks
 
 LuaExpression.prototype.receiveGo = function () {
-    // ToDo
-    // What to do with this guy?
+    // This guy does nothing actually
 }
 
 // Iterators
@@ -156,9 +155,7 @@ LuaExpression.prototype.doReport = function (body) {
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    // WRONG! We have to implement wait ourselves
-    // See http://www.eluaproject.net/doc/v0.9/en_refman_gen_tmr.html#tmr.getdiffnow
-    this.code = 'tmr.delay(nil, ' + secs + ' * 1000000)\n\r';
+    this.code = 'local t = tmr.read() while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do coroutine.yield() end local t = nil\n\r';
 }
 
 
