@@ -471,17 +471,22 @@ BoardMorph.prototype.clearCoroutines = function() {
 BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     // Build all coroutines based on the block stacks on the scripts canvas
     // Fire up the coroutines that correspond with topBlocksToRun
+    // Add all that to autorun.lua so it's persistent upon reset
 
     var myself = this,
         coroutinesToRun = [],
-        luaScript = '',
+        luaScript = 'f = io.open("autorun.lua", "w")\n\rf:write(\'',
         closing = '';
 
+    // We should probably not stop everything, but that's how it works for now
+    this.stopAll();
+
+    // We need to split luaScript by ";" and do file writes on those chunks
     this.clearCoroutines();
     this.scripts.children.forEach(function(topBlock) {
 
         var coroutine = myself.addCoroutine(new LuaExpression(topBlock, myself));
-        luaScript += coroutine.body + '\n\r';
+        luaScript += coroutine.body + '; ';
 
         if (topBlocksToRun.indexOf(topBlock) > -1) {
             coroutinesToRun.push(coroutine);
@@ -489,12 +494,9 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     })
 
     closing += new Scheduler(coroutinesToRun);
-    luaScript += '\n\r' + closing;
-    console.log(luaScript);
-    console.log((new Date()).getMilliseconds().toString());
-    this.serialPort.write(luaScript, function() {
-        console.log((new Date()).getMilliseconds().toString());
-    });
+    luaScript += closing + '\')\n\rf:close()\n\rdofile("autorun.lua")\n\r';
+
+    this.serialPort.write(luaScript);
 }
 
 // BoardMorph duplicating (fullCopy)
