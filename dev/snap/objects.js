@@ -475,28 +475,29 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
     var myself = this,
         coroutinesToRun = [],
-        luaScript = 'f = io.open("autorun.lua", "w")\n\rf:write(\'',
-        closing = '';
+        opening = 'io.stdinred("autorun.lua")\n\r',
+        luaScript = '',
+        closing = '\n\rio.stdinred()\n\rdofile("autorun.lua")\n\r';
 
-    // We should probably not stop everything, but that's how it works for now
-    this.stopAll();
-
-    // We need to split luaScript by ";" and do file writes on those chunks
     this.clearCoroutines();
     this.scripts.children.forEach(function(topBlock) {
-
         var coroutine = myself.addCoroutine(new LuaExpression(topBlock, myself));
-        luaScript += coroutine.body + '; ';
-
+        luaScript += coroutine.body + ';\n\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
             coroutinesToRun.push(coroutine);
         };
     })
 
-    closing += new Scheduler(coroutinesToRun);
-    luaScript += closing + '\')\n\rf:close()\n\rdofile("autorun.lua")\n\r';
+    luaScript += new Scheduler(coroutinesToRun) + '\n\r';
+    luaScript += closing + '\n\r'; 
 
-    this.serialPort.write(luaScript);
+    // We should probably not stop everything, but that's how it works for now
+    this.stopAll();
+    
+    myself.serialPort.write(opening);
+    myself.serialPort.write(luaScript);
+
+    require('fs').writeFile("/tmp/test.lua", opening + luaScript);
 }
 
 // BoardMorph duplicating (fullCopy)
