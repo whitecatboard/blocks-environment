@@ -36,7 +36,7 @@ Coroutine.prototype.init = function(id, body, topBlock) {
 }
 
 Coroutine.prototype.wrap = function(body) {
-    return 'coroutine.create(function() ' + body + ' end); ';
+    return 'coroutine.create(function() ' + body + ' end);\n\r';
 }
 
 // Scheduler handles coroutine threads
@@ -62,8 +62,8 @@ Scheduler.prototype.init = function(coroutines) {
         myself.body += 'if (coroutine.status(c' + coroutine.id + ') ~= "dead") then coroutine.resume(c' + coroutine.id + '); end; ';
     });
 
-    this.header += 'false) do ';
-    this.body += 'end; ';
+    this.header += 'false) do\n\r';
+    this.body += 'end;\n\r';
 }
 
 Scheduler.prototype.toString = function() {
@@ -135,31 +135,31 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do ' + body + ' coroutine.yield(); end; ';
+    this.code = 'while (true) do\n\r' + body + '\n\rcoroutine.yield(); end;\n\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do ' + body + ' coroutine.yield(); end; ';
+    this.code = 'for i=1,' + times + ' do\n\r' + body + '\n\rcoroutine.yield(); end;\n\r';
 };
 
 // Conditionals
 
 LuaExpression.prototype.doIf = function (condition, body) {
-    this.code = 'if ' + condition + ' then ' + body + ' end; ';
+    this.code = 'if ' + condition + ' then\n\r' + body + '\n\rend;\n\r';
 }
 
 LuaExpression.prototype.doIfElse = function (condition, trueBody, falseBody) {
-    this.code = 'if ' + condition + ' then ' + trueBody + ' else ' + falseBody + ' end; ';
+    this.code = 'if ' + condition + ' then\n\r' + trueBody + '\n\relse\n\r' + falseBody + '\n\rend;\n\r';
 }
 
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'return ' + body + '; ';
+    this.code = 'return ' + body + ';\n\r';
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do coroutine.yield(); end local t = nil; ';
+    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do coroutine.yield(); end local t = nil;\n\r';
 }
 
 
@@ -252,5 +252,5 @@ LuaExpression.prototype.reportJoinWords = function () {
 //// Input/Output
 
 LuaExpression.prototype.setPinDigital = function(pin, value) {
-    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.' + this.board.pinOut.digitalOutput[pin] + '); '
+    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.' + this.board.pinOut.digitalOutput[pin] + ');\n\r'
 }
