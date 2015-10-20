@@ -475,7 +475,8 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
     var myself = this,
         coroutinesToRun = [],
-        luaScript = 'f = io.open("autorun.lua", "w")\n\rf:write(\'',
+        opening = 'f = io.open("autorun.lua", "w");\n\r',
+        luaScript = '',
         closing = '';
 
     // We should probably not stop everything, but that's how it works for now
@@ -494,9 +495,18 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     })
 
     closing += new Scheduler(coroutinesToRun);
-    luaScript += closing + '\')\n\rf:close()\n\rdofile("autorun.lua")\n\r';
+    
+    myself.serialPort.write(opening);
 
-    this.serialPort.write(luaScript);
+    luaScript += closing; 
+
+    luaScript.split(';').forEach(function(line) {
+        myself.serialPort.write('f:write(\'' + line + '\');\n\r');
+    })
+
+    myself.serialPort.write('f:close();dofile("autorun.lua");\n\r');
+
+    require('fs').writeFile("/tmp/test", opening + luaScript + 'f:close();dofile("autorun.lua");');
 }
 
 // BoardMorph duplicating (fullCopy)
