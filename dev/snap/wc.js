@@ -1,5 +1,9 @@
 // Global utils
 
+console.log = function (d) {
+    process.stdout.write(d + '\n');
+}
+
 function toHighLow(value) {
     return toBool(value) ? 'high' : 'low'
 }
