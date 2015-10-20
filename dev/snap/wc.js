@@ -19,7 +19,7 @@ function toBool(value) {
 }
 
 function luaEscape(string) {
-    return (string.replace("'","\\'")).replace('"', '\\"')
+    return (string.toString().replace("'","\\'")).replace('"', '\\"')
 }
 
 // Coroutines map into Lua coroutines
@@ -29,14 +29,17 @@ Coroutine.prototype = {};
 Coroutine.prototype.constructor = Coroutine;
 Coroutine.uber = Object.prototype;
 
-function Coroutine(id, body, topBlock) {
-    this.init(id, body, topBlock);
+function Coroutine(id, topBlock) {
+    this.init(id, topBlock);
 }
 
-Coroutine.prototype.init = function(id, body, topBlock) {
+Coroutine.prototype.init = function(id, topBlock) {
     this.id = id;
-    this.body = 'c' + id  + ' = ' + this.wrap(body);
     this.topBlock = topBlock;
+}
+
+Coroutine.prototype.setBody = function(body) {
+    this.body = 'c' + this.id + ' = ' + this.wrap(body);
 }
 
 Coroutine.prototype.wrap = function(body) {
@@ -159,7 +162,7 @@ LuaExpression.prototype.doIfElse = function (condition, trueBody, falseBody) {
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'return ' + body + ';\n\r';
+    this.code = 'local result = ' + body + '; print("wc:' + this.topBlock.coroutine.id + ':"..result); return result;\n\r';
 }
 
 LuaExpression.prototype.doWait = function (secs) {

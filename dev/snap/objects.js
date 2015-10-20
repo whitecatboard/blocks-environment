@@ -392,6 +392,10 @@ BoardMorph.prototype.init = function () {
     BoardMorph.uber.init.call(this);
 };
 
+BoardMorph.prototype.findCoroutine = function(id) {
+    return detect(this.coroutines, function(coroutine) { return coroutine.id == id });
+}
+
 BoardMorph.prototype.serialConnect = function(port, baudrate) {
     var serialLib = require('serialport'),
         SerialPort = serialLib.SerialPort,
@@ -401,7 +405,13 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
     this.serialPort.on('open', function (err) {
         if (err) { console.log(err) };
         myself.serialPort.on('data', function(data) {
-//            console.log('data received: ' + data);
+            // We use a prefix to know whether this data is meant for us
+            if (data.toString().slice(0,2) == 'wc') {
+                var id = data.toString().match(/^wc:([0-9]*):/, '$1')[1],
+                    contents = data.toString().match(/^wc:[0-9]*:(.*)/, '$1')[1];
+                console.log(this.findCoroutine(id));
+                console.log(contents);
+            }
         });
     });
 
@@ -436,7 +446,7 @@ BoardMorph.prototype.stopAll = function() {
 
 // Coroutine handling
 
-BoardMorph.prototype.addCoroutine = function(body, topBlock) {
+BoardMorph.prototype.addCoroutine = function(topBlock) {
     var coroutine, 
         id = 0;
 
@@ -444,7 +454,9 @@ BoardMorph.prototype.addCoroutine = function(body, topBlock) {
         id = this.coroutines[this.coroutines.length - 1].id + 1;
     }
 
-    coroutine = new Coroutine(id, body, topBlock);
+    coroutine = new Coroutine(id, topBlock);
+    topBlock.coroutine = coroutine;
+    coroutine.setBody(new LuaExpression(topBlock, this));
     this.coroutines.push(coroutine);
     return coroutine;
 }
@@ -481,8 +493,9 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
         closing = '\n\rio.stdinred()\n\rdofile("autorun.lua")\n\r';
 
     this.clearCoroutines();
+
     this.scripts.children.forEach(function(topBlock) {
-        var coroutine = myself.addCoroutine(new LuaExpression(topBlock, myself));
+        var coroutine = myself.addCoroutine(topBlock);
         luaScript += coroutine.body + ';\n\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
             coroutinesToRun.push(coroutine);
@@ -510,6 +523,7 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
             if (index > luaScript.length) { return };
             var chunk = luaScript.slice(index, index + 1023);
             
+            // Ugly delay. Needed until we solve the buffer issue at the other side of the cable
             for (i=0; i<100000000; i++) {};
 
             writeAndDrain(

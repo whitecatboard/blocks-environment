@@ -10469,7 +10469,6 @@ ScriptFocusMorph.prototype.processKeyPress = function (event) {
 ScriptFocusMorph.prototype.processKeyEvent = function (event, action) {
     var keyName, ctrl, shift;
 
-    //console.log(event.keyCode);
     this.world().hand.destroyTemporaries(); // remove result bubbles, if any
     switch (event.keyCode) {
     case 8:
@@ -10518,7 +10517,6 @@ ScriptFocusMorph.prototype.reactToKeyEvent = function (key) {
         types,
         vNames;
 
-    // console.log(evt);
     switch (evt) {
     case 'esc':
         return this.stopEditing();
