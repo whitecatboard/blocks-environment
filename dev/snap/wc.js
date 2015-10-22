@@ -248,7 +248,11 @@ LuaExpression.prototype.reportJoinWords = function () {
     this.code = '(""';
 
     (Array.prototype.slice.call(arguments)).forEach(function(eachWord) {
-        myself.code += '.. "' + luaEscape(eachWord) + '"'
+        if (typeof eachWord === 'string') { 
+            myself.code += '.. "' + luaEscape(eachWord) + '"'
+        } else {
+            myself.code += '.. tostring(' + eachWord + ')'
+        }
     });
 
     this.code += ')';

@@ -3581,6 +3581,8 @@ ReporterBlockMorph.prototype.mouseClickLeft = function (pos) {
     } else {
         var receiver = this.receiver(),
             board = receiver.parentThatIsA(IDE_Morph).board;
+        // Just in case it wasn't flushed before
+        board.removeCoroutine('r');
         this.coroutine = new Coroutine('r', this);
         board.addCoroutine(this.coroutine);
         board.getReporterResult(this);

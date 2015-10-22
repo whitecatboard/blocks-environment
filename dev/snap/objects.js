@@ -485,8 +485,13 @@ BoardMorph.prototype.addCoroutine = function(coroutine) {
 }
 
 BoardMorph.prototype.removeCoroutine = function(coroutine) {
-    coroutine.topBlock.coroutine = null;
-    this.coroutines.splice(this.coroutines.indexOf(coroutine), 1);
+    if (typeof coroutine === 'number') {
+        this.findCoroutine(coroutine).topBlock.coroutine = null;
+        this.coroutines.splice(coroutine, 1);
+    } else {
+        if (coroutine.topBlock) { coroutine.topBlock.coroutine = null };
+        this.coroutines.splice(this.coroutines.indexOf(coroutine), 1);
+    }
 }
 
 BoardMorph.prototype.clearCoroutines = function() {
