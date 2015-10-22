@@ -11,11 +11,11 @@ function toHighLow(value) {
 function toBool(value) {
     var val = value;
 
-    if (typeof value == 'string') {
+    if (typeof value === 'string') {
         val = value.toLowerCase();
     }
 
-    return (val == 'true' || val == 1 || val == 'high')
+    return (val === 'true' || val === 1 || val === 'high')
 }
 
 function luaEscape(string) {
@@ -43,7 +43,7 @@ Coroutine.prototype.setBody = function(body) {
 }
 
 Coroutine.prototype.wrap = function(body) {
-    return 'coroutine.create(function() ' + body + ' end);\n\r';
+    return 'coroutine.create(function() ' + body + ' end);\r';
 }
 
 // Scheduler handles coroutine threads
@@ -69,8 +69,8 @@ Scheduler.prototype.init = function(coroutines) {
         myself.body += 'if (coroutine.status(c' + coroutine.id + ') ~= "dead") then coroutine.resume(c' + coroutine.id + '); end; ';
     });
 
-    this.header += 'false) do\n\r';
-    this.body += 'end;\n\r';
+    this.header += 'false) do\r';
+    this.body += 'end;\r';
 }
 
 Scheduler.prototype.toString = function() {
@@ -89,7 +89,7 @@ function LuaExpression(topBlock, board) {
 }
 
 LuaExpression.prototype.init = function(topBlock, board) {
-    if (topBlock == null) { return };
+    if (topBlock === null) { return };
 
     var args = [],
         nextBlock = topBlock.nextBlock ? topBlock.nextBlock() : null;
@@ -142,31 +142,31 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\n\r' + body + '\n\rcoroutine.yield(); end;\n\r';
+    this.code = 'while (true) do\r' + body + '\rcoroutine.yield(); end;\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\n\r' + body + '\n\rcoroutine.yield(); end;\n\r';
+    this.code = 'for i=1,' + times + ' do\r' + body + '\rcoroutine.yield(); end;\r';
 };
 
 // Conditionals
 
 LuaExpression.prototype.doIf = function (condition, body) {
-    this.code = 'if ' + condition + ' then\n\r' + body + '\n\rend;\n\r';
+    this.code = 'if ' + condition + ' then\r' + body + '\rend;\r';
 }
 
 LuaExpression.prototype.doIfElse = function (condition, trueBody, falseBody) {
-    this.code = 'if ' + condition + ' then\n\r' + trueBody + '\n\relse\n\r' + falseBody + '\n\rend;\n\r';
+    this.code = 'if ' + condition + ' then\r' + trueBody + '\relse\r' + falseBody + '\rend;\r';
 }
 
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'local result = ' + body + '; print("wc:' + this.topBlock.coroutine.id + ':"..result); return result;\n\r';
+    this.code = 'local result = ' + body + '; print("wc:' + this.topBlock.coroutine.id + ':" .. tostring(result)); return result;\r';
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do coroutine.yield(); end local t = nil;\n\r';
+    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do coroutine.yield(); end local t = nil;\r';
 }
 
 
@@ -259,5 +259,5 @@ LuaExpression.prototype.reportJoinWords = function () {
 //// Input/Output
 
 LuaExpression.prototype.setPinDigital = function(pin, value) {
-    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.' + this.board.pinOut.digitalOutput[pin] + ');\n\r'
+    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.' + this.board.pinOut.digitalOutput[pin] + ');\r'
 }

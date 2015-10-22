@@ -393,7 +393,7 @@ BoardMorph.prototype.init = function () {
 };
 
 BoardMorph.prototype.findCoroutine = function(id) {
-    return detect(this.coroutines, function(coroutine) { return coroutine.id == id });
+    return detect(this.coroutines, function(coroutine) { return coroutine.id === id });
 }
 
 BoardMorph.prototype.serialConnect = function(port, baudrate) {
@@ -401,16 +401,34 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
         SerialPort = serialLib.SerialPort,
         myself = this;
 
-    this.serialPort = new SerialPort(port, { baudrate: baudrate, buffersize: 64 });
+    this.serialPort = new SerialPort(
+            port, 
+            { 
+                baudrate: baudrate, 
+                buffersize: 64,
+                parser: serialLib.parsers.readline("\n")
+            });
+
     this.serialPort.on('open', function (err) {
         if (err) { console.log(err) };
         myself.serialPort.on('data', function(data) {
             // We use a prefix to know whether this data is meant for us
-            if (data.toString().slice(0,2) == 'wc') {
-                var id = data.toString().match(/^wc:([0-9]*):/, '$1')[1],
-                    contents = data.toString().match(/^wc:[0-9]*:(.*)/, '$1')[1];
-                console.log(this.findCoroutine(id));
-                console.log(contents);
+            if (data.slice(0,2) === 'wc') {
+                try {
+                    var id = data.match(/^wc:(.*):/, '$1')[1],
+                        contents = data.match(/^wc:.*:(.*)/, '$1')[1];
+                    if (id === 'r') {
+                        // It's just a reporter block, we need to flush its coroutine afterwards
+                        var block = myself.findCoroutine(id).topBlock;
+                        block.showBubble(contents);
+                        myself.removeCoroutine(block.coroutine);
+                    } else {
+                        myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
+                    }
+                } catch (err) {
+                    console.log(myself);
+                    myself.parentThatIsA(IDE_Morph).showMessage('Error parsing data back from the board:\n' + data + '\n' + err);
+                }
             }
         });
     });
@@ -441,12 +459,12 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('\n\r');
+    this.serialPort.write('\r');
 }
 
 // Coroutine handling
 
-BoardMorph.prototype.addCoroutine = function(topBlock) {
+BoardMorph.prototype.addCoroutineForBlock = function(topBlock) {
     var coroutine, 
         id = 0;
 
@@ -457,23 +475,18 @@ BoardMorph.prototype.addCoroutine = function(topBlock) {
     coroutine = new Coroutine(id, topBlock);
     topBlock.coroutine = coroutine;
     coroutine.setBody(new LuaExpression(topBlock, this));
+
+    return this.addCoroutine(coroutine);
+}
+
+BoardMorph.prototype.addCoroutine = function(coroutine) {
     this.coroutines.push(coroutine);
     return coroutine;
 }
 
-BoardMorph.prototype.removeCoroutine = function(id) {
-    var index;
-
-    for (var i = 0; i < this.coroutines.length; i ++) {
-        if (this.coroutines[i].id == id) {
-            index = id;
-            break;
-        }
-    }
-
-    if (index !== null) {
-        this.coroutines.splice(index, 1);
-    }
+BoardMorph.prototype.removeCoroutine = function(coroutine) {
+    coroutine.topBlock.coroutine = null;
+    this.coroutines.splice(this.coroutines.indexOf(coroutine), 1);
 }
 
 BoardMorph.prototype.clearCoroutines = function() {
@@ -488,22 +501,24 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
     var myself = this,
         coroutinesToRun = [],
-        opening = 'io.stdinred("autorun.lua")\n\r',
+        opening = 'io.stdinred("autorun.lua")\r',
         luaScript = '',
-        closing = '\n\rio.stdinred()\n\rdofile("autorun.lua")\n\r';
+        closing = '\rio.stdinred()\rdofile("autorun.lua")\r';
 
     this.clearCoroutines();
 
     this.scripts.children.forEach(function(topBlock) {
-        var coroutine = myself.addCoroutine(topBlock);
-        luaScript += coroutine.body + ';\n\r';
+        if (topBlock instanceof ReporterBlockMorph) { return };
+
+        var coroutine = myself.addCoroutineForBlock(topBlock);
+        luaScript += coroutine.body + ';\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
             coroutinesToRun.push(coroutine);
         };
     })
 
-    luaScript += new Scheduler(coroutinesToRun) + '\n\r';
-    luaScript += closing + '\n\r'; 
+    luaScript += new Scheduler(coroutinesToRun) + '\r';
+    luaScript += closing + '\r'; 
 
     // We should probably not stop everything, but that's how it works for now
     this.stopAll();
@@ -521,7 +536,7 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
         function writeSlice() {
             if (index > luaScript.length) { return };
-            var chunk = luaScript.slice(index, index + 1023);
+            var chunk = luaScript.slice(index, index + 255);
             
             // Ugly delay. Needed until we solve the buffer issue at the other side of the cable
             for (i=0; i<100000000; i++) {};
@@ -530,20 +545,23 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
                     chunk,
                     function(err) {
                         if (err) { console.log(err) };
-                        index += 1023;
+                        index += 255;
                         writeSlice();
                     });
         }
 
         writeSlice();
     });
+}
 
-    /* 
-    var buffer = new Buffer(opening + luaScript);
-    myself.serialPort.write(buffer);
-    */
-
-    require('fs').writeFile("/tmp/test.lua", opening + luaScript);
+BoardMorph.prototype.getReporterResult = function (block) {
+    this.serialPort.write(
+            'local result = '
+            + new LuaExpression(block) 
+            + '; print("wc:'
+            + block.coroutine.id 
+            + ':"..tostring(result));\r'
+            );
 }
 
 // BoardMorph duplicating (fullCopy)

@@ -2393,7 +2393,8 @@ BlockMorph.prototype.mouseClickLeft = function () {
         if (board) {
             /* We take ALL scripts in the scripting area and translate them into Lua.
              * Each script maps to a coroutine.
-             * buildCoroutines() pushes it all to the board and tells it to fire the coroutine that "top" holds.
+             * buildCoroutines() pushes it all to the board and tells it to fire the
+             * coroutine that "top" holds.
              */
             board.buildCoroutines([top]);
         }
@@ -3578,7 +3579,11 @@ ReporterBlockMorph.prototype.mouseClickLeft = function (pos) {
             this.world()
         );
     } else {
-        ReporterBlockMorph.uber.mouseClickLeft.call(this, pos);
+        var receiver = this.receiver(),
+            board = receiver.parentThatIsA(IDE_Morph).board;
+        this.coroutine = new Coroutine('r', this);
+        board.addCoroutine(this.coroutine);
+        board.getReporterResult(this);
     }
 };
 
