@@ -296,7 +296,11 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'data',
             spec: 'table %exp'
         },
-
+        reportListItem: {
+            type: 'reporter',
+            category: 'data',
+            spec: 'item %s of %l'
+        },
         // Input/Output
         setPinDigital: {
             type: 'command',
@@ -415,8 +419,8 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             // We use a prefix to know whether this data is meant for us
             if (data.slice(0,2) === 'wc') {
                 try {
-                    var id = data.match(/^wc:(.*):/, '$1')[1],
-                        contents = data.match(/^wc:.*:(.*)/, '$1')[1];
+                    var id = data.match(/^wc:(.*?):/, '$1')[1],
+                        contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
                     if (id === 'r') {
                         // It's just a reporter block, we need to flush its coroutine afterwards
                         var block = myself.findCoroutine(id).topBlock;
@@ -525,7 +529,7 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     luaScript += new Scheduler(coroutinesToRun) + '\r';
     luaScript += closing + '\r'; 
 
-    // We should probably not stop everything, but that's how it works for now
+    // We should not stop everything, but that's how it works for now
     this.stopAll();
 
     function writeAndDrain (data, callback) {
@@ -560,12 +564,15 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 }
 
 BoardMorph.prototype.getReporterResult = function (block) {
+    // We should not stop everything, but that's how it works for now
+    this.stopAll();
+
     this.serialPort.write(
-            'local result = '
-            + new LuaExpression(block) 
+            'r = '
+            + new LuaExpression(block, this) 
             + '; print("wc:'
             + block.coroutine.id 
-            + ':"..tostring(result));\r'
+            + ':"..tostring(r));r = nil;\r'
             );
 }
 
@@ -714,6 +721,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push('=');
 
         blocks.push(block('reportNewList'));
+        blocks.push(block('reportListItem'));
 
         blocks.push('=');
 

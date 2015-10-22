@@ -4739,6 +4739,24 @@ ArgMorph.prototype.drawNew = function () {
     }
 };
 
+ArgMorph.prototype.listIcon = function () {
+    var icon,
+        context;
+
+    icon = newCanvas(new Point(10,13));
+    context = icon.getContext('2d');
+    context.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    context.fillRect(0, 0, icon.width, icon.height);
+    context.strokeStyle = 'rgb(50, 50, 50)';
+    context.rect(0, 0, icon.width, icon.height / 3);
+    context.stroke();
+    context.rect(0, icon.height / 3, icon.width, icon.height / 3);
+    context.stroke();
+    context.rect(0, 2 * icon.height / 3, icon.width, icon.height / 3);
+    context.stroke();
+    return icon;
+};
+
 ArgMorph.prototype.objectIcon = function () {
     return this.labelPart('%turtle').image;
 };

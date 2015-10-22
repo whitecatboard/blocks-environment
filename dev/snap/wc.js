@@ -4,18 +4,8 @@ console.log = function (d) {
     process.stdout.write(d + '\n');
 }
 
-function toHighLow(value) {
-    return toBool(value) ? 'high' : 'low'
-}
-
-function toBool(value) {
-    var val = value;
-
-    if (typeof value === 'string') {
-        val = value.toLowerCase();
-    }
-
-    return (val === 'true' || val === 1 || val === 'high')
+function toLuaDigital(val) {
+    return '((' + val + ' == true or ' + val + ' == 1) and 1 or 0)'
 }
 
 function luaEscape(string) {
@@ -247,11 +237,11 @@ LuaExpression.prototype.reportJoinWords = function () {
 
     this.code = '(""';
 
-    (Array.prototype.slice.call(arguments)).forEach(function(eachWord) {
+    Array.prototype.slice.call(arguments).forEach(function(eachWord) {
         if (typeof eachWord === 'string') { 
-            myself.code += '.. "' + luaEscape(eachWord) + '"'
+            myself.code += '.. "' + luaEscape(eachWord) + '"';
         } else {
-            myself.code += '.. tostring(' + eachWord + ')'
+            myself.code += '.. tostring(' + eachWord + ')';
         }
     });
 
@@ -260,8 +250,33 @@ LuaExpression.prototype.reportJoinWords = function () {
 
 //// Data
 
+LuaExpression.prototype.reportNewList = function() {
+    var myself = this;
+
+    this.code = '({';
+    Array.prototype.slice.call(arguments).forEach(function(eachItem) {
+        if (typeof eachItem === 'string') { 
+            myself.code += '"' + luaEscape(eachItem) + '",';
+        } else {
+            myself.code += eachItem + ',';
+        } 
+    });
+    this.code += '})';
+}
+
+LuaExpression.prototype.reportListItem = function(index, list) {
+    this.code = '(' + list + '[' + index + '])';
+}
+
 //// Input/Output
 
-LuaExpression.prototype.setPinDigital = function(pin, value) {
-    this.code = 'pio.pin.set' + toHighLow(value) + '(pio.' + this.board.pinOut.digitalOutput[pin] + ');\r'
+LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
+    var pin = this.board.pinOut.digitalOutput[pinNumber];
+    this.code = 'pio.pin.setdir(pio.OUTPUT, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ');\r'
+}
+
+LuaExpression.prototype.getPinDigital = function(pinNumber) {
+    // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
+    var pin = this.board.pinOut.digitalInput[pinNumber];
+    this.code = '(function () pio.pin.setdir(pio.INPUT, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
 }

@@ -7,6 +7,9 @@
     "analogOutput": {
     },
     "digitalInput": {
+        "0": "PB_2",
+        "1": "PB_3",
+        "2": "PB_4"
     },
     "analogInput": {
     }
