@@ -4748,11 +4748,9 @@ ArgMorph.prototype.listIcon = function () {
     context.fillStyle = 'rgba(255, 255, 255, 0.2)';
     context.fillRect(0, 0, icon.width, icon.height);
     context.strokeStyle = 'rgb(50, 50, 50)';
-    context.rect(0, 0, icon.width, icon.height / 3);
-    context.stroke();
-    context.rect(0, icon.height / 3, icon.width, icon.height / 3);
-    context.stroke();
-    context.rect(0, 2 * icon.height / 3, icon.width, icon.height / 3);
+    context.strokeRect(0, 0, icon.width, icon.height / 3);
+    context.strokeRect(0, icon.height / 3, icon.width, icon.height / 3);
+    context.strokeRect(0, 2 * icon.height / 3, icon.width, icon.height / 3);
     context.stroke();
     return icon;
 };

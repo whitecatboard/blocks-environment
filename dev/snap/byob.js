@@ -1191,7 +1191,6 @@ BlockDialogMorph.prototype.init = function (target, action, environment) {
     // additional properties:
     this.blockType = 'command';
     this.category = 'custom';
-    this.isGlobal = true;
     this.types = null;
     this.categories = null;
 
@@ -1208,8 +1207,6 @@ BlockDialogMorph.prototype.init = function (target, action, environment) {
 
     this.types = new AlignmentMorph('row', this.padding);
     this.add(this.types);
-    this.scopes = new AlignmentMorph('row', this.padding);
-    this.add(this.scopes);
 
     this.categories = new BoxMorph();
     this.categories.color = BoardMorph.prototype.paletteColor.lighter(8);
@@ -1219,7 +1216,6 @@ BlockDialogMorph.prototype.init = function (target, action, environment) {
     this.add(this.categories);
 
     this.createTypeButtons();
-    this.createScopeButtons();
     this.fixLayout();
 };
 
@@ -1253,8 +1249,6 @@ BlockDialogMorph.prototype.openForChange = function (
         this.types.destroy();
         this.types = null;
     }
-    this.scopes.destroy();
-    this.scopes = null;
     this.fixLayout();
     this.drawNew();
     this.popUp(world);
@@ -1442,51 +1436,6 @@ BlockDialogMorph.prototype.setType = function (blockType) {
     this.edit();
 };
 
-// scope radio buttons
-
-BlockDialogMorph.prototype.createScopeButtons = function () {
-    var myself = this;
-
-    this.addScopeButton(
-        function () {myself.setScope('gobal'); },
-        "for all sprites",
-        function () {return myself.isGlobal; }
-    );
-    this.addScopeButton(
-        function () {myself.setScope('local'); },
-        "for this sprite only",
-        function () {return !myself.isGlobal; }
-    );
-};
-
-BlockDialogMorph.prototype.addScopeButton = function (action, label, query) {
-    var button = new ToggleMorph(
-        'radiobutton',
-        this,
-        action,
-        label,
-        query
-    );
-    button.edge = this.buttonEdge / 2;
-    button.outline = this.buttonOutline / 2;
-    button.outlineColor = this.buttonOutlineColor;
-    button.outlineGradient = this.buttonOutlineGradient;
-    button.contrast = this.buttonContrast;
-
-    button.drawNew();
-    button.fixLayout();
-    this.scopes.add(button);
-    return button;
-};
-
-
-BlockDialogMorph.prototype.setScope = function (varType) {
-    this.isGlobal = (varType === 'gobal');
-    this.scopes.children.forEach(function (c) {
-        c.refresh();
-    });
-    this.edit();
-};
 
 // other ops
 
@@ -1588,23 +1537,6 @@ BlockDialogMorph.prototype.fixLayout = function () {
             this.types.setTop(this.body.bottom() + this.padding);
         } else if (this.categories) {
             this.types.setTop(this.categories.bottom() + this.padding);
-        }
-    }
-
-    if (this.scopes) {
-        this.scopes.fixLayout();
-        this.silentSetHeight(
-            this.height()
-                    + this.scopes.height()
-                    + (this.padding / 3)
-        );
-        this.silentSetWidth(Math.max(
-            this.width(),
-            this.scopes.width() + this.padding * 2
-        ));
-        this.scopes.setCenter(this.center());
-        if (this.types) {
-            this.scopes.setTop(this.types.bottom() + (this.padding / 3));
         }
     }
 
@@ -1761,25 +1693,23 @@ BlockEditorMorph.prototype.close = function () {
     // assert that no scope conflicts exists, i.e. that a global
     // definition doesn't contain any local custom blocks, as they
     // will be rendered "Obsolete!" when reloading the project
-    if (this.definition.isGlobal) {
-        block = detect(
+    block = detect(
             this.body.contents.allChildren(),
             function (morph) {
                 return morph.definition && !morph.definition.isGlobal;
             }
-        );
-        if (block) {
-            block = block.definition.blockInstance();
-            block.addShadow();
-            new DialogBoxMorph().inform(
+            );
+    if (block) {
+        block = block.definition.blockInstance();
+        block.addShadow();
+        new DialogBoxMorph().inform(
                 'Local Block(s) in Global Definition',
                 'This global block definition contains one or more\n'
-                    + 'local custom blocks which must be removed first.',
+                + 'local custom blocks which must be removed first.',
                 myself.world(),
                 block.fullImage()
-            );
-            return;
-        }
+                );
+        return;
     }
 
     // allow me to disappear only when name collisions
@@ -1789,12 +1719,12 @@ BlockEditorMorph.prototype.close = function () {
         block = doubles[0].blockInstance();
         block.addShadow();
         new DialogBoxMorph(this, 'consolidateDoubles', this).askYesNo(
-            'Same Named Blocks',
-            'Another custom block with this name exists.\n'
+                'Same Named Blocks',
+                'Another custom block with this name exists.\n'
                 + 'Would you like to replace it?',
-            myself.world(),
-            block.fullImage()
-        );
+                myself.world(),
+                block.fullImage()
+                );
         return;
     }
 
@@ -1877,6 +1807,7 @@ BlockEditorMorph.prototype.context = function (prototypeHat) {
     topBlock.allChildren().forEach(function (c) {
         if (c instanceof BlockMorph) {c.cachedInputs = null; }
     });
+    // TODO
     stackFrame = Process.prototype.reify.call(
         null,
         topBlock,
@@ -3047,7 +2978,6 @@ function VariableDialogMorph(target, action, environment) {
 
 VariableDialogMorph.prototype.init = function (target, action, environment) {
     // additional properties:
-    this.types = null;
     this.isGlobal = true;
 
     // initialize inherited properties:
@@ -3056,26 +2986,6 @@ VariableDialogMorph.prototype.init = function (target, action, environment) {
         target,
         action,
         environment
-    );
-
-    // override inherited properites:
-    this.types = new AlignmentMorph('row', this.padding);
-    this.add(this.types);
-    this.createTypeButtons();
-};
-
-VariableDialogMorph.prototype.createTypeButtons = function () {
-    var myself = this;
-
-    this.addTypeButton(
-        function () {myself.setType('gobal'); },
-        "for all sprites",
-        function () {return myself.isGlobal; }
-    );
-    this.addTypeButton(
-        function () {myself.setType('local'); },
-        "for this sprite only",
-        function () {return !myself.isGlobal; }
     );
 };
 

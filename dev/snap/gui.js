@@ -1217,6 +1217,10 @@ IDE_Morph.prototype.newProject = function () {
     this.fixLayout();
 };
 
+IDE_Morph.prototype.openProjectString = function () {
+    // TODO
+}
+
 IDE_Morph.prototype.exportScriptsPicture = function () {
     var pics = [],
         pic,
@@ -1446,9 +1450,7 @@ IDE_Morph.prototype.reflectLanguage = function (lang, callback) {
     var projectData;
     SnapTranslator.language = lang;
     BoardMorph.prototype.initBlocks();
-    this.spriteBar.tabBar.tabTo('scripts');
     this.createCategories();
-    this.createCorralBar();
     this.fixLayout();
     if (this.loadNewProject) {
         this.newProject();
@@ -1480,10 +1482,6 @@ IDE_Morph.prototype.userSetBlocksScale = function () {
     blck.color = BoardMorph.prototype.blockColor.operators;
     blck.setSpec(localize('blocks'));
     scrpt.bottomBlock().nextBlock(blck);
-    /*
-    blck = BoardMorph.prototype.blockForSelector('doForever');
-    blck.inputs()[0].nestedBlock(scrpt);
-    */
 
     sample = new FrameMorph();
     sample.acceptsDrops = false;
@@ -1500,15 +1498,6 @@ IDE_Morph.prototype.userSetBlocksScale = function () {
     sample.add(shield);
 
     action = function (num) {
-    /*
-        var c;
-        blck.setScale(num);
-        blck.drawNew();
-        blck.setSpec(blck.blockSpec);
-        c = blck.inputs()[0];
-        c.setScale(num);
-        c.nestedBlock(scrpt);
-    */
         scrpt.blockSequence().forEach(function (block) {
             block.setScale(num);
             block.drawNew();
@@ -1548,9 +1537,7 @@ IDE_Morph.prototype.setBlocksScale = function (num) {
     SyntaxElementMorph.prototype.setScale(num);
     CommentMorph.prototype.refreshScale();
     BoardMorph.prototype.initBlocks();
-    this.spriteBar.tabBar.tabTo('scripts');
     this.createCategories();
-    this.createCorralBar();
     this.fixLayout();
     this.openProjectString(projectData);
     this.saveSetting('zoom', num);
