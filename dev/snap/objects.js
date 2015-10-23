@@ -1,19 +1,19 @@
 /*
-
     objects.js
 
     a scriptable microworld
     based on morphic.js, blocks.js and threads.js
     inspired by Scratch
 
-    written by Jens Mönig
+    based on Snap! by Jens Mönig
     jens@moenig.org
 
-    Copyright (C) 2015 by Jens Mönig
+    Copyright (C) 2015 by Bernat Romagosa
+    bromagosa@citilab.eu
 
-    This file is part of Snap!.
+    This file is part of WhiteCat.
 
-    Snap! is free software: you can redistribute it and/or modify
+    WhiteCat is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
     published by the Free Software Foundation, either version 3 of
     the License, or (at your option) any later version.
@@ -25,27 +25,6 @@
 
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-    prerequisites:
-    --------------
-    needs blocks.js, wc.js, morphic.js and widgets.js
-
-
-    toc
-    ---
-    the following list shows the order in which all constructors are
-    defined. Use this list to locate code in this document:
-
-        BoardMorph
-        BoardHighlightMorph
-        CellMorph
-        WatcherMorph
-
-        SpeechBubbleMorph*
-            BoardBubbleMorph
-
-    * defined in Morphic.js
 */
 
 var BoardMorph;
@@ -377,7 +356,7 @@ BoardMorph.prototype.blockAlternatives = {
 
 function BoardMorph() {
     this.init();
-}
+};
 
 BoardMorph.prototype.init = function () {
     this.name = localize('Board');
@@ -398,7 +377,7 @@ BoardMorph.prototype.init = function () {
 
 BoardMorph.prototype.findCoroutine = function(id) {
     return detect(this.coroutines, function(coroutine) { return coroutine.id === id });
-}
+};
 
 BoardMorph.prototype.serialConnect = function(port, baudrate) {
     var serialLib = require('serialport'),
@@ -441,7 +420,7 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
     // For now we're supporting the WhiteCat board, but adding a menu
     // option for other boards is trivial
     this.loadPinOut('whitecat');
-}
+};
 
 BoardMorph.prototype.loadPinOut = function(boardName) {
     var myself = this,
@@ -460,11 +439,43 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
             }
         }
     });
-}
+};
 
 BoardMorph.prototype.stopAll = function() {
     this.serialPort.write('\r');
-}
+};
+
+BoardMorph.prototype.writeAndDrain = function(data, callback) {
+    var myself = this;
+    this.serialPort.write(data, function() {
+        myself.serialPort.drain(callback);
+    });
+};
+
+BoardMorph.prototype.sliceWrite = function(data, sliceSize) {
+
+    var myself = this,
+        index = 0;
+
+    function writeSlice() {
+        if (index > data.length) { return };
+        var chunk = data.slice(index, index + sliceSize);
+
+        // Ugly delay. Needed until we solve the buffer issue at the other side of the cable
+        for (i=0; i<100000000; i++) {};
+
+        myself.writeAndDrain(
+                chunk,
+                function(err) {
+                    if (err) { console.log(err) };
+                    index += sliceSize;
+                    writeSlice();
+                });
+    }
+
+    writeSlice();
+
+};
 
 // Coroutine handling
 
@@ -481,12 +492,12 @@ BoardMorph.prototype.addCoroutineForBlock = function(topBlock) {
     coroutine.setBody(new LuaExpression(topBlock, this));
 
     return this.addCoroutine(coroutine);
-}
+};
 
 BoardMorph.prototype.addCoroutine = function(coroutine) {
     this.coroutines.push(coroutine);
     return coroutine;
-}
+};
 
 BoardMorph.prototype.removeCoroutine = function(coroutine) {
     if (typeof coroutine === 'number') {
@@ -496,23 +507,35 @@ BoardMorph.prototype.removeCoroutine = function(coroutine) {
         if (coroutine.topBlock) { coroutine.topBlock.coroutine = null };
         this.coroutines.splice(this.coroutines.indexOf(coroutine), 1);
     }
-}
+};
 
 BoardMorph.prototype.clearCoroutines = function() {
     this.coroutines = [];
     this.stopAll();
-}
+};
 
-BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
-    // Build all coroutines based on the block stacks on the scripts canvas
+BoardMorph.prototype.runCoroutines = function(topBlocksToRun) {
     // Fire up the coroutines that correspond with topBlocksToRun
+
+    var closing = '\rdofile("autorun.lua")\r',
+        coroutinesToRun = [];
+
+    // We should not stop everything, but that's how it works for now
+    this.stopAll();
+
+    topBlocksToRun.forEach(function(block) { coroutinesToRun.push(block.coroutine) });
+
+    this.sliceWrite(new Scheduler(coroutinesToRun) + closing, 255);
+};
+
+BoardMorph.prototype.buildCoroutines = function() {
+    // Build all coroutines based on the block stacks on the scripts canvas
     // Add all that to autorun.lua so it's persistent upon reset
 
     var myself = this,
-        coroutinesToRun = [],
         opening = 'io.stdinred("autorun.lua")\r',
         luaScript = '',
-        closing = '\rio.stdinred()\rdofile("autorun.lua")\r';
+        closing = '\rio.stdinred()\r';
 
     this.clearCoroutines();
 
@@ -521,47 +544,11 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
         var coroutine = myself.addCoroutineForBlock(topBlock);
         luaScript += coroutine.body + ';\r';
-        if (topBlocksToRun.indexOf(topBlock) > -1) {
-            coroutinesToRun.push(coroutine);
-        };
-    })
 
-    luaScript += new Scheduler(coroutinesToRun) + '\r';
-    luaScript += closing + '\r'; 
-
-    // We should not stop everything, but that's how it works for now
-    this.stopAll();
-
-    function writeAndDrain (data, callback) {
-        myself.serialPort.write(data, function() {
-            myself.serialPort.drain(callback);
-        });
-    }
-
-    writeAndDrain(opening, function(err) {
-        var index = 0;
-
-        if (err) { console.log(err) };
-
-        function writeSlice() {
-            if (index > luaScript.length) { return };
-            var chunk = luaScript.slice(index, index + 255);
-            
-            // Ugly delay. Needed until we solve the buffer issue at the other side of the cable
-            for (i=0; i<100000000; i++) {};
-
-            writeAndDrain(
-                    chunk,
-                    function(err) {
-                        if (err) { console.log(err) };
-                        index += 255;
-                        writeSlice();
-                    });
-        }
-
-        writeSlice();
     });
-}
+
+    this.sliceWrite(opening + luaScript + closing, 255);
+};
 
 BoardMorph.prototype.getReporterResult = function (block) {
     // We should not stop everything, but that's how it works for now
@@ -574,7 +561,7 @@ BoardMorph.prototype.getReporterResult = function (block) {
             + block.coroutine.id 
             + ':"..tostring(r));r = nil;\r'
             );
-}
+};
 
 // BoardMorph duplicating (fullCopy)
 
@@ -1293,7 +1280,7 @@ BoardBubbleMorph.uber = SpeechBubbleMorph.prototype;
 
 function BoardBubbleMorph(data, scale, isThought, isQuestion) {
     this.init(data, scale, isThought, isQuestion);
-}
+};
 
 BoardBubbleMorph.prototype.init = function (
     data,

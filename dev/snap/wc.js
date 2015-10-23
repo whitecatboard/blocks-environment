@@ -79,7 +79,7 @@ function LuaExpression(topBlock, board) {
 }
 
 LuaExpression.prototype.init = function(topBlock, board) {
-    if (topBlock === null) { return };
+    if (topBlock === null || !(topBlock instanceof BlockMorph)) { return };
 
     var args = [],
         nextBlock = topBlock.nextBlock ? topBlock.nextBlock() : null;
@@ -110,9 +110,7 @@ LuaExpression.prototype.init = function(topBlock, board) {
 
     this[topBlock.selector].apply(this, args);
 
-    if (nextBlock) {
-        this.code += (new LuaExpression(nextBlock, board)).toString();
-    }
+    if (nextBlock) { this.code += (new LuaExpression(nextBlock, board)).toString() };
 }
 
 LuaExpression.prototype.toString = function() {
