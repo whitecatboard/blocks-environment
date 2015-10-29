@@ -391,7 +391,10 @@ BoardMorph.prototype.init = function () {
     
     this.coroutines = [];
 
-    this.serialConnect('/dev/ttyUSB0', 115200);
+    this.serialLib = require('serialport');
+    this.SerialPort = this.serialLib.SerialPort;
+
+    this.serialConnect();
 
     BoardMorph.uber.init.call(this);
 };
@@ -400,47 +403,85 @@ BoardMorph.prototype.findCoroutine = function(id) {
     return detect(this.coroutines, function(coroutine) { return coroutine.id === id });
 }
 
-BoardMorph.prototype.serialConnect = function(port, baudrate) {
-    var serialLib = require('serialport'),
-        SerialPort = serialLib.SerialPort,
-        myself = this;
+BoardMorph.prototype.discoverPorts = function(callback) {
+    var myself = this,
+        portList = [],
+        portcheck = /usb|DevB|rfcomm|acm|^com/i;
 
-    this.serialPort = new SerialPort(
-            port, 
-            { 
-                baudrate: baudrate, 
-                buffersize: 64,
-                parser: serialLib.parsers.readline("\n")
-            });
-
-    this.serialPort.on('open', function (err) {
-        if (err) { console.log(err) };
-        myself.serialPort.on('data', function(data) {
-            // We use a prefix to know whether this data is meant for us
-            if (data.slice(0,2) === 'wc') {
-                try {
-                    var id = data.match(/^wc:(.*?):/, '$1')[1],
-                        contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
-                    if (id === 'r') {
-                        // It's just a reporter block, we need to flush its coroutine afterwards
-                        var block = myself.findCoroutine(id).topBlock;
-                        block.showBubble(contents);
-                        myself.removeCoroutine(block.coroutine);
-                    } else {
-                        myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
-                    }
-                } catch (err) {
-                    console.log(myself);
-                    myself.parentThatIsA(IDE_Morph).showMessage('Error parsing data back from the board:\n' + data + '\n' + err);
+    this.serialLib.list(function (err, ports) { 
+        if (ports) { 
+            ports.forEach(function(each) { 
+                if(portcheck.test(each.comName)) {
+                    portList[each.comName] = each.comName; 
                 }
+            });
+        }
+        callback(portList);
+    });
+}
+
+BoardMorph.prototype.serialConnect = function(port, baudrate) {
+    var myself = this;
+
+    if (!baudrate) { baudrate = 115200 };
+
+    if (!port) { 
+        var ports = this.discoverPorts(function(ports) {
+            if (Object.keys(ports).length == 0) {
+                world.inform('No boards found');
+                return;
+            } else if (Object.keys(ports).length == 1) {
+                myself.serialConnect(ports[Object.keys(ports)[0]], baudrate);
+            } else if (Object.keys(ports).length > 1) { 
+                var portMenu = new MenuMorph(this, 'select a port');
+                Object.keys(ports).forEach(function(each) {
+                    portMenu.addItem(each, function() { 
+                        myself.serialConnect(each, baudrate);
+                    })
+                });
+                portMenu.popUpCenteredInWorld(world);
             }
         });
-    });
 
-    // PinOut depends on the board
-    // For now we're supporting the WhiteCat board, but adding a menu
-    // option for other boards is trivial
-    this.loadPinOut('whitecat');
+    } else {
+
+        this.serialPort = new this.SerialPort(
+                port, 
+                { 
+                    baudrate: baudrate, 
+                    buffersize: 64,
+                    parser: this.serialLib.parsers.readline("\n")
+                });
+
+        this.serialPort.on('open', function (err) {
+            if (err) { console.log(err) };
+            myself.serialPort.on('data', function(data) {
+                // We use a prefix to know whether this data is meant for us
+                if (data.slice(0,2) === 'wc') {
+                    try {
+                        var id = data.match(/^wc:(.*?):/, '$1')[1],
+                        contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
+                        if (id === 'r') {
+                            // It's just a reporter block, we need to flush its coroutine afterwards
+                            var block = myself.findCoroutine(id).topBlock;
+                            block.showBubble(contents);
+                            myself.removeCoroutine(block.coroutine);
+                        } else {
+                            myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
+                        }
+                    } catch (err) {
+                        console.log(myself);
+                        myself.parentThatIsA(IDE_Morph).showMessage('Error parsing data back from the board:\n' + data + '\n' + err);
+                    }
+                }
+            });
+        });
+
+        // PinOut depends on the board
+        // For now we're supporting the WhiteCat board, but adding a menu
+        // option for other boards is trivial
+        this.loadPinOut('whitecat');
+    }
 }
 
 BoardMorph.prototype.loadPinOut = function(boardName) {

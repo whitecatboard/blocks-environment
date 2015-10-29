@@ -119,7 +119,7 @@ LuaExpression.prototype.toString = function() {
     return this.code;
 }
 
-/////////////// Lua generation ////////////////////
+/////////////// Lua blocks ////////////////////
 
 //// Control
 
@@ -183,7 +183,7 @@ LuaExpression.prototype.reportModulus = function (a, b) {
 }
 
 LuaExpression.prototype.reportMonadic = function (func, a) {
-    var specialFunctions = { ln: 'log', log: 'log10', 'e^': 'math.exp', '10^': '10^' };
+    var specialFunctions = { ln: 'math.log', log: 'math.log10', 'e^': 'math.exp', '10^': '10^' };
 
     this.code = '(';
 
