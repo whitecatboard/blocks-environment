@@ -476,10 +476,6 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 255),
                 buffer = new Buffer(chunk.length + 1);
        
-            console.log('-- ' + this.outputIndex + ' --');
-            console.log(chunk);
-            console.log('-- ' + chunk.length + ' --');
-
             buffer[0] = chunk.length;
             buffer.write(chunk, 1);
 
@@ -487,8 +483,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         
             this.outputIndex += 255;
             if (this.outputIndex > this.outputData.length) {
-                // we're done!
-                console.log('done');
+                // we're done
                 this.outputData = null;
                 this.outputIndex = 0;
                 var buffer = new Buffer(24);

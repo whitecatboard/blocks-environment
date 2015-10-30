@@ -2262,10 +2262,8 @@ BlockMorph.prototype.reactToTemplateCopy = function () {
 
 BlockMorph.prototype.mouseClickLeft = function () {
     var top = this.topBlock(),
-        receiver = top.receiver(),
-        shiftClicked = this.world().currentKey === 16,
-        board,
-        coroutine;
+        board = top.receiver(),
+        shiftClicked = this.world().currentKey === 16;
 
     if (shiftClicked && !this.isTemplate) {
         return this.focus();
@@ -2273,16 +2271,13 @@ BlockMorph.prototype.mouseClickLeft = function () {
     if (top instanceof PrototypeHatBlockMorph) {
         return top.mouseClickLeft();
     }
-    if (receiver) {
-        board = receiver.parentThatIsA(IDE_Morph).board;
-        if (board) {
-            /* We take ALL scripts in the scripting area and translate them into Lua.
-             * Each script maps to a coroutine.
-             * buildCoroutines() pushes it all to the board and tells it to fire the
-             * coroutine that "top" holds.
-             */
-            board.buildCoroutines([top]);
-        }
+    if (board) {
+        /* We take ALL scripts in the scripting area and translate them into Lua.
+         * Each script maps to a coroutine.
+         * buildCoroutines() pushes it all to the board and tells it to fire the
+         * coroutine that "top" holds.
+         */
+        board.buildCoroutines([top]);
     }
 
 };
@@ -2304,17 +2299,13 @@ BlockMorph.prototype.focus = function () {
 
 BlockMorph.prototype.activeProcess = function () {
     var top = this.topBlock(),
-        receiver = top.receiver(),
-        board;
+        board = top.receiver();
     if (top instanceof PrototypeHatBlockMorph) {
         return null;
     }
-    if (receiver) {
-        board = receiver.parentThatIsA(IDE_Morph).board;
-        if (board) {
-            // WhiteCat ToDo
-            // return board.threads.findProcess(top);
-        }
+    if (board) {
+        // WhiteCat ToDo
+        // return board.threads.findProcess(top);
     }
     return null;
 };
@@ -3464,8 +3455,7 @@ ReporterBlockMorph.prototype.mouseClickLeft = function (pos) {
             this.world()
         );
     } else {
-        var receiver = this.receiver(),
-            board = receiver.parentThatIsA(IDE_Morph).board;
+        var board = this.receiver();
         board.getReporterResult(this);
     }
 };
@@ -3474,16 +3464,12 @@ ReporterBlockMorph.prototype.mouseClickLeft = function (pos) {
 
 ReporterBlockMorph.prototype.ExportResultPic = function () {
     var top = this.topBlock(),
-        receiver = top.receiver(),
-        board;
+        board = top.receiver();
     if (top !== this) {return; }
-    if (receiver) {
-        board = receiver.parentThatIsA(IDE_Morph).board;
-        if (board) {
-            // WhiteCat ToDo
-            // board.threads.stopProcess(top);
-            // board.threads.startProcess(top, false, true);
-        }
+    if (board) {
+        // WhiteCat ToDo
+        // board.threads.stopProcess(top);
+        // board.threads.startProcess(top, false, true);
     }
 };
 
