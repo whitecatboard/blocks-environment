@@ -1,3 +1,21 @@
+/*
+    Copyright (C) 2015 by Bernat Romagosa
+    Edutec Research Group, Citilab - Cornellà de Llobregat (Barcelona)
+    bromagosa@citilab.eu
+    
+    This file is part of WhiteCat.
+    WhiteCat is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of
+    the License, or (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 // Global utils
 
 console.log = function (d) {
@@ -29,11 +47,11 @@ Coroutine.prototype.init = function(id, topBlock) {
 }
 
 Coroutine.prototype.setBody = function(body) {
-    this.body = 'c' + this.id + ' = ' + this.wrap(body);
+    this.body = 'c = coroutine; c' + this.id + ' = ' + this.wrap(body);
 }
 
 Coroutine.prototype.wrap = function(body) {
-    return 'coroutine.create(function() ' + body + ' end);\r';
+    return 'c.create(function() ' + body + ' end);\r';
 }
 
 // Scheduler handles coroutine threads
@@ -55,8 +73,8 @@ Scheduler.prototype.init = function(coroutines) {
     this.body = '';
 
     this.coroutines.forEach(function(coroutine) {
-        myself.header += 'coroutine.status(c' + coroutine.id + ') ~= "dead" or '
-        myself.body += 'if (coroutine.status(c' + coroutine.id + ') ~= "dead") then coroutine.resume(c' + coroutine.id + '); end; ';
+        myself.header += 'c.status(c' + coroutine.id + ') ~= "dead" or '
+        myself.body += 'if (c.status(c' + coroutine.id + ') ~= "dead") then c.resume(c' + coroutine.id + '); end; ';
     });
 
     this.header += 'false) do\r';
@@ -132,11 +150,11 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\r' + body + '\rcoroutine.yield(); end;\r';
+    this.code = 'while (true) do\r' + body + '\rc.yield(); end;\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\r' + body + '\rcoroutine.yield(); end;\r';
+    this.code = 'for i=1,' + times + ' do\r' + body + '\rc.yield(); end;\r';
 };
 
 // Conditionals
@@ -156,7 +174,7 @@ LuaExpression.prototype.doReport = function (body) {
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do coroutine.yield(); end local t = nil;\r';
+    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do c.yield(); end local t = nil;\r';
 }
 
 
@@ -272,11 +290,13 @@ LuaExpression.prototype.reportListItem = function(index, list) {
 
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = this.board.pinOut.digitalOutput[pinNumber];
-    this.code = 'pio.pin.setdir(pio.OUTPUT, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ');\r'
+    // pio.OUTPUT is 0
+    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ');\r'
 }
 
 LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
+    // pio.INPUT is 1
     var pin = this.board.pinOut.digitalInput[pinNumber];
-    this.code = '(function () pio.pin.setdir(pio.INPUT, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
+    this.code = '(function () pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
 }

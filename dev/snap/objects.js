@@ -1,51 +1,22 @@
 /*
-
-    objects.js
-
-    a scriptable microworld
-    based on morphic.js, blocks.js and threads.js
-    inspired by Scratch
-
-    written by Jens Mönig
+    based on Snap! by Jens Mönig
     jens@moenig.org
 
-    Copyright (C) 2015 by Jens Mönig
-
-    This file is part of Snap!.
-
-    Snap! is free software: you can redistribute it and/or modify
+    Copyright (C) 2015 by Bernat Romagosa
+    Edutec Research Group, Citilab - Cornellà de Llobregat (Barcelona)
+    bromagosa@citilab.eu
+    
+    This file is part of WhiteCat.
+    WhiteCat is free software: you can redistribute it and/or modify
     it under the terms of the GNU Affero General Public License as
     published by the Free Software Foundation, either version 3 of
     the License, or (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU Affero General Public License for more details.
-
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-
-    prerequisites:
-    --------------
-    needs blocks.js, wc.js, morphic.js and widgets.js
-
-
-    toc
-    ---
-    the following list shows the order in which all constructors are
-    defined. Use this list to locate code in this document:
-
-        BoardMorph
-        BoardHighlightMorph
-        CellMorph
-        WatcherMorph
-
-        SpeechBubbleMorph*
-            BoardBubbleMorph
-
-    * defined in Morphic.js
 */
 
 var BoardMorph;
@@ -375,11 +346,15 @@ BoardMorph.prototype.blockAlternatives = {
 
 // BoardMorph instance creation
 
-function BoardMorph() {
-    this.init();
+function BoardMorph(ide) {
+    this.init(ide);
 }
 
-BoardMorph.prototype.init = function () {
+BoardMorph.prototype.init = function (ide) {
+    if (this.name) { return };
+
+    this.ide = ide;
+
     this.name = localize('Board');
     this.scripts = new ScriptsMorph(this);
     this.customBlocks = [];
@@ -390,6 +365,7 @@ BoardMorph.prototype.init = function () {
     this.idx = 0; // not to be serialized (!) - used for de-serialization
     
     this.coroutines = [];
+    this.reporterBlock = null;
 
     this.serialLib = require('serialport');
     this.SerialPort = this.serialLib.SerialPort;
@@ -428,7 +404,14 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
     if (!port) { 
         var ports = this.discoverPorts(function(ports) {
             if (Object.keys(ports).length == 0) {
-                world.inform('No boards found');
+                world.prompt(
+                        'No boards found.\nPlease enter the serial port name\nor leave blank to retry discovery\nand press OK', 
+                        function(port){
+                            myself.serialConnect(port, baudrate)
+                        },
+                        this,
+                        port
+                        );
                 return;
             } else if (Object.keys(ports).length == 1) {
                 myself.serialConnect(ports[Object.keys(ports)[0]], baudrate);
@@ -449,31 +432,16 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
                 port, 
                 { 
                     baudrate: baudrate, 
-                    buffersize: 64,
-                    parser: this.serialLib.parsers.readline("\n")
+                    buffersize: 256,
+                    parser: this.serialLib.parsers.readline('\n')
                 });
 
         this.serialPort.on('open', function (err) {
             if (err) { console.log(err) };
+            myself.stopAll();
+            myself.ide.showMessage('Board connected at ' + port, 2);
             myself.serialPort.on('data', function(data) {
-                // We use a prefix to know whether this data is meant for us
-                if (data.slice(0,2) === 'wc') {
-                    try {
-                        var id = data.match(/^wc:(.*?):/, '$1')[1],
-                        contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
-                        if (id === 'r') {
-                            // It's just a reporter block, we need to flush its coroutine afterwards
-                            var block = myself.findCoroutine(id).topBlock;
-                            block.showBubble(contents);
-                            myself.removeCoroutine(block.coroutine);
-                        } else {
-                            myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
-                        }
-                    } catch (err) {
-                        console.log(myself);
-                        myself.parentThatIsA(IDE_Morph).showMessage('Error parsing data back from the board:\n' + data + '\n' + err);
-                    }
-                }
+                myself.parseSerialResponse(data);
             });
         });
 
@@ -482,7 +450,57 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
         // option for other boards is trivial
         this.loadPinOut('whitecat');
     }
-}
+};
+
+BoardMorph.prototype.parseSerialResponse = function(data) {
+    var myself = this;
+
+    // We use a prefix to know whether this data is meant for us
+    if (data.slice(0,2) === 'wc') {
+        try {
+            var id = data.match(/^wc:(.*?):/, '$1')[1],
+            contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
+            if (id === 'r') {
+                // It's just a reporter block
+                myself.reporterBlock.showBubble(contents);
+            } else {
+                // This was returned by a report command block
+                myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
+            }
+        } catch (err) {
+            myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 2);
+        }
+    } else if (data === 'C') {
+        // We've been given permission to send the next chunk of a script
+        if (this.outputData) {
+            var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 255),
+                buffer = new Buffer(chunk.length + 1);
+       
+            console.log('-- ' + this.outputIndex + ' --');
+            console.log(chunk);
+            console.log('-- ' + chunk.length + ' --');
+
+            buffer[0] = chunk.length;
+            buffer.write(chunk, 1);
+
+            this.serialPort.write(buffer);
+        
+            this.outputIndex += 255;
+            if (this.outputIndex > this.outputData.length) {
+                // we're done!
+                console.log('done');
+                this.outputData = null;
+                this.outputIndex = 0;
+                var buffer = new Buffer(24);
+                buffer[0] = 0;
+                buffer.write('\rdofile("autorun.lua")\r', 1);
+                this.serialPort.write(buffer);
+            }
+        }
+    } else {
+        console.log(data)
+    }
+};
 
 BoardMorph.prototype.loadPinOut = function(boardName) {
     var myself = this,
@@ -504,7 +522,7 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('\r');
+    this.serialPort.write('');
 }
 
 // Coroutine handling
@@ -550,10 +568,10 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     // Add all that to autorun.lua so it's persistent upon reset
 
     var myself = this,
-        coroutinesToRun = [],
-        opening = 'io.stdinred("autorun.lua")\r',
-        luaScript = '',
-        closing = '\rio.stdinred()\rdofile("autorun.lua")\r';
+        coroutinesToRun = [];
+
+    this.outputData = '';
+    this.outputIndex = 0;
 
     this.clearCoroutines();
 
@@ -561,59 +579,30 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
         if (topBlock instanceof ReporterBlockMorph) { return };
 
         var coroutine = myself.addCoroutineForBlock(topBlock);
-        luaScript += coroutine.body + ';\r';
+        myself.outputData += coroutine.body + ';\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
             coroutinesToRun.push(coroutine);
         };
     })
 
-    luaScript += new Scheduler(coroutinesToRun) + '\r';
-    luaScript += closing + '\r'; 
+    this.outputData += new Scheduler(coroutinesToRun) + '\r';
 
     // We should not stop everything, but that's how it works for now
     this.stopAll();
 
-    function writeAndDrain (data, callback) {
-        myself.serialPort.write(data, function() {
-            myself.serialPort.drain(callback);
-        });
-    }
-
-    writeAndDrain(opening, function(err) {
-        var index = 0;
-
-        if (err) { console.log(err) };
-
-        function writeSlice() {
-            if (index > luaScript.length) { return };
-            var chunk = luaScript.slice(index, index + 255);
-            
-            // Ugly delay. Needed until we solve the buffer issue at the other side of the cable
-            for (i=0; i<100000000; i++) {};
-
-            writeAndDrain(
-                    chunk,
-                    function(err) {
-                        if (err) { console.log(err) };
-                        index += 255;
-                        writeSlice();
-                    });
-        }
-
-        writeSlice();
-    });
+    // We start writing
+    // BoardMorph.prototype.parseSerialResponse takes over
+    this.serialPort.write('io.receive("autorun.lua")\r');
 }
 
 BoardMorph.prototype.getReporterResult = function (block) {
     // We should not stop everything, but that's how it works for now
     this.stopAll();
-
+    this.reporterBlock = block;
     this.serialPort.write(
             'r = '
             + new LuaExpression(block, this) 
-            + '; print("wc:'
-            + block.coroutine.id 
-            + ':"..tostring(r));r = nil;\r'
+            + ';print("wc:r:"..tostring(r));r = nil;\r'
             );
 }
 
@@ -769,14 +758,13 @@ BoardMorph.prototype.blockTemplates = function (category) {
         button = new PushButtonMorph(
             null,
             function () {
-                var ide = myself.parentThatIsA(IDE_Morph);
                 new BlockDialogMorph(
                     null,
                     function (definition) {
                         if (definition.spec !== '') {
                             myself.customBlocks.push(definition);
-                            ide.flushPaletteCache();
-                            ide.refreshPalette();
+                            myself.ide.flushPaletteCache();
+                            myself.ide.refreshPalette();
                             new BlockEditorMorph(definition, myself).popUp();
                         }
                     },
@@ -834,7 +822,6 @@ BoardMorph.prototype.freshPalette = function (category) {
 
     palette.userMenu = function () {
         var menu = new MenuMorph(),
-            ide = this.parentThatIsA(IDE_Morph),
             more = {
                 operators:
                     ['reifyScript', 'reifyReporter', 'reifyPredicate'],
@@ -1010,10 +997,9 @@ BoardMorph.prototype.searchBlocks = function (
 ) {
     var myself = this,
         unit = SyntaxElementMorph.prototype.fontSize,
-        ide = this.parentThatIsA(IDE_Morph),
         oldSearch = '',
         searchBar = new InputFieldMorph(searchString || ''),
-        searchPane = ide.createPalette('forSearch'),
+        searchPane = myself.ide.createPalette('forSearch'),
         blocksList = [],
         selection,
         focus;
@@ -1057,7 +1043,7 @@ BoardMorph.prototype.searchBlocks = function (
     searchPane.contents.color = myself.paletteColor;
     searchPane.addContents(searchBar);
     searchBar.drawNew();
-    searchBar.setWidth(ide.logo.width() - 30);
+    searchBar.setWidth(myself.ide.logo.width() - 30);
     searchBar.contrast = 90;
     searchBar.setPosition(
         searchPane.contents.topLeft().add(new Point(10, 10))
@@ -1114,11 +1100,11 @@ BoardMorph.prototype.searchBlocks = function (
     };
 
     searchBar.cancel = function () {
-        ide.refreshPalette();
-        ide.palette.adjustScrollBars();
+        myself.ide.refreshPalette();
+        myself.ide.palette.adjustScrollBars();
     };
 
-    ide.fixLayout('refreshPalette');
+    this.ide.fixLayout('refreshPalette');
     searchBar.edit();
     if (searchString) {searchPane.reactToKeystroke(); }
 };
@@ -1239,10 +1225,10 @@ BoardMorph.prototype.allEditorBlockInstances = function (definition) {
 
 
 BoardMorph.prototype.paletteBlockInstance = function (definition) {
-    var ide = this.parentThatIsA(IDE_Morph);
-    if (!ide) {return null; }
+    var myself = this;
+    if (!this.ide) {return null; }
     return detect(
-        ide.palette.contents.children,
+        myself.ide.palette.contents.children,
         function (block) {
             return block.definition === definition;
         }
@@ -1288,8 +1274,7 @@ BoardMorph.prototype.doubleDefinitionsFor = function (definition) {
 
 BoardMorph.prototype.replaceDoubleDefinitionsFor = function (definition) {
     var doubles = this.doubleDefinitionsFor(definition),
-        myself = this,
-        ide;
+        myself = this;
     doubles.forEach(function (double) {
         myself.allBlockInstances(double).forEach(function (block) {
             block.definition = definition;
@@ -1300,10 +1285,9 @@ BoardMorph.prototype.replaceDoubleDefinitionsFor = function (definition) {
     this.customBlocks = this.customBlocks.filter(function (def) {
         return !contains(doubles, def);
     });
-    ide = this.parentThatIsA(IDE_Morph);
-    if (ide) {
-        ide.flushPaletteCache();
-        ide.refreshPalette();
+    if (this.ide) {
+        this.ide.flushPaletteCache();
+        this.ide.refreshPalette();
     }
 };
 

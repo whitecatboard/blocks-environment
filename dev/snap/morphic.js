@@ -3246,7 +3246,7 @@ Morph.prototype.inform = function (msg) {
     m = new MenuMorph(this, text);
     m.addItem("Ok");
     m.isDraggable = true;
-    m.popUpCenteredAtHand(this.world());
+    m.popUpCenteredInWorld(this.world());
 };
 
 Morph.prototype.prompt = function (
@@ -3321,7 +3321,7 @@ Morph.prototype.prompt = function (
         return null;
     });
     menu.isDraggable = true;
-    menu.popUpAtHand(this.world());
+    menu.popUpCenteredInWorld(this.world());
     entryField.text.edit();
 };
 
