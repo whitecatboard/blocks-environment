@@ -13,6 +13,7 @@ textarea {
 body {
     font-size: 1em;
     line-height: 1.4;
+    background-image: url("../img/bg-w.png");
     color: #312738;
 }
 
@@ -178,7 +179,7 @@ a:hover {
 .header {
     width: 100%;
     padding: 35px 0 20px 0;
-    background: #181425;
+    background-image: url("../img/bg.png");
 }
 
 .main-container {

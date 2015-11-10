@@ -1,15 +1,17 @@
 {
     "digitalOutput": {
-        "0": "PB_2",
         "1": "PB_3",
-        "2": "PB_4"
+        "2": "PB_4",
+        "3": "PB_5"
     },
     "analogOutput": {
+        "0": "0"
     },
     "digitalInput": {
         "0": "PB_2",
         "1": "PB_3",
-        "2": "PB_4"
+        "2": "PB_4",
+        "3": "PB_5"
     },
     "analogInput": {
     }

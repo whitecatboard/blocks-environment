@@ -300,3 +300,14 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
     var pin = this.board.pinOut.digitalInput[pinNumber];
     this.code = '(function () pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
 }
+
+LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
+    // ToDo when we have PWM
+}
+
+LuaExpression.prototype.getPinAnalog = function(pinNumber) {
+    // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
+    // pio.INPUT is 1
+    var pin = this.board.pinOut.analogOutput[pinNumber];
+    this.code = '(function () local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
+}
