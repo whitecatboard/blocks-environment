@@ -111,6 +111,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
 
     // additional properties:
     this.source = 'local';
+    this.serializer = new SnapSerializer();
 
     this.currentCategory = 'control';
     this.currentTab = 'scripts';
@@ -630,7 +631,7 @@ IDE_Morph.prototype.reactToWorldResize = function (rect) {
 IDE_Morph.prototype.droppedText = function (aString, name) {
     var lbl = name ? name.split('.')[0] : '';
     if (aString.indexOf('<project') === 0) {
-        return this.openProjectString(aString);
+        return this.openProjectString(aString, this);
     }
     if (aString.indexOf('<blocks') === 0) {
         return this.openBlocksString(aString, lbl, true);
@@ -951,6 +952,53 @@ IDE_Morph.prototype.projectMenu = function () {
     menu.addItem('Project notes...', 'editProjectNotes');
     menu.addLine();
     menu.addItem('New', 'createNewProject');
+    menu.addItem('Save to disk', 'saveToDisk');
+    menu.addItem(
+        'Load from disk',
+        function () {
+            var inp = document.createElement('input');
+            if (myself.filePicker) {
+                document.body.removeChild(myself.filePicker);
+                myself.filePicker = null;
+            }
+            inp.type = 'file';
+            inp.style.color = "transparent";
+            inp.style.backgroundColor = "transparent";
+            inp.style.border = "none";
+            inp.style.outline = "none";
+            inp.style.position = "absolute";
+            inp.style.top = "0px";
+            inp.style.left = "0px";
+            inp.style.width = "0px";
+            inp.style.height = "0px";
+            inp.addEventListener(
+                "change",
+                function (event) {
+                    var files = event instanceof FileList ? event
+                        : event.target.files || event.dataTransfer.files;
+                    document.body.removeChild(inp);
+                    myself.filePicker = null;
+
+                    function readText(aFile) {
+                        var frd = new FileReader();
+                        frd.onloadend = function (e) {
+                            myself.loadFromString(e.target.result, aFile.name);
+                        };
+                        frd.readAsText(aFile);
+                    }
+
+                    readText(files[0]);
+                },
+                false
+            );
+            document.body.appendChild(inp);
+            myself.filePicker = inp;
+            inp.click();
+        },
+        'Load an WhiteCat project from a file'
+    );
+
+
     menu.addLine();
 
     if (shiftClicked) {
@@ -1187,9 +1235,80 @@ IDE_Morph.prototype.newProject = function () {
     this.fixLayout();
 };
 
-IDE_Morph.prototype.openProjectString = function () {
-    // TODO
+IDE_Morph.prototype.loadFromString = function (str) {
+    //try {
+        this.serializer.openProject(
+                this.serializer.load(str, this),
+                this
+                );
+  /*  } catch (err) {
+        this.showMessage('Load failed: ' + err);
+    }*/
 }
+
+IDE_Morph.prototype.saveToDisk = function (name, plain) {
+    var menu, str, myself = this;
+
+    if (!name) {
+        world.prompt(
+                'Please enter a name for\nthis project', 
+                function(name){
+                    myself.saveToDisk(name)
+                },
+                this,
+                'Untitled'
+                );
+        return;
+    } else {
+        this.setProjectName(name);
+        try {
+            menu = this.showMessage('Exporting');
+            str = this.serializer.serialize(this.board);
+            saveFile(name, str);
+            menu.destroy();
+        } catch (err) {
+            this.showMessage('Export failed: ' + err);
+        }
+    }
+
+    function homePath() {
+        return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'] + ((process.platform == 'win32') ? '\\' : '/')
+    }
+
+    function saveFile(name, contents) {
+        var inp = document.createElement('input');
+        if (myself.filePicker) {
+            document.body.removeChild(myself.filePicker);
+            myself.filePicker = null;
+        }
+        inp.nwsaveas = homePath() + name + '.xml';
+        inp.type = 'file';
+        inp.style.color = "transparent";
+        inp.style.backgroundColor = "transparent";
+        inp.style.border = "none";
+        inp.style.outline = "none";
+        inp.style.position = "absolute";
+        inp.style.top = "0px";
+        inp.style.left = "0px";
+        inp.style.width = "0px";
+        inp.style.height = "0px";
+        inp.addEventListener(
+            "change",
+            function (e) {
+                document.body.removeChild(inp);
+                myself.filePicker = null;
+
+                var fs = require('fs');
+                fs.writeFileSync(e.target.files[0].path, contents);
+                myself.showMessage('Exported!', 1);
+            },
+            false
+        );
+        document.body.appendChild(inp);
+        myself.filePicker = inp;
+        inp.click();
+    }
+};
 
 IDE_Morph.prototype.exportScriptsPicture = function () {
     var pics = [],
