@@ -100,14 +100,14 @@ PushButtonMorph.uber = TriggerMorph.prototype;
 PushButtonMorph.prototype.fontSize = 10;
 PushButtonMorph.prototype.fontStyle = 'sans-serif';
 PushButtonMorph.prototype.labelColor = new Color(0, 0, 0);
-PushButtonMorph.prototype.labelShadowColor = new Color(255, 255, 255);
+PushButtonMorph.prototype.labelShadowColor = new Color(255, 255, 230);
 PushButtonMorph.prototype.labelShadowOffset = new Point(1, 1);
 
-PushButtonMorph.prototype.color = new Color(220, 220, 220);
+PushButtonMorph.prototype.color = new Color(130, 130, 130);
 PushButtonMorph.prototype.pressColor = new Color(115, 180, 240);
 PushButtonMorph.prototype.highlightColor
     = PushButtonMorph.prototype.pressColor.lighter(50);
-PushButtonMorph.prototype.outlineColor = new Color(30, 30, 30);
+PushButtonMorph.prototype.outlineColor = new Color(130, 130, 130);
 PushButtonMorph.prototype.outlineGradient = false;
 PushButtonMorph.prototype.contrast = 60;
 
@@ -160,7 +160,7 @@ PushButtonMorph.prototype.init = function (
     TriggerMorph.uber.init.call(this);
 
     // override inherited properites:
-    this.color = PushButtonMorph.prototype.color;
+    this.color = new Color(255,255,250);
     this.drawNew();
     this.fixLayout();
 };
@@ -212,19 +212,9 @@ PushButtonMorph.prototype.drawOutline = function (context) {
     var outlineStyle,
         isFlat = MorphicPreferences.isFlat && !this.is3D;
 
-    if (!this.outline || isFlat) {return null; }
-    if (this.outlineGradient) {
-        outlineStyle = context.createLinearGradient(
-            0,
-            0,
-            0,
-            this.height()
-        );
-        outlineStyle.addColorStop(1, 'white');
-        outlineStyle.addColorStop(0, this.outlineColor.darker().toString());
-    } else {
-        outlineStyle = this.outlineColor.toString();
-    }
+    if (!this.outline) {return null; }
+    
+    outlineStyle = this.outlineColor.toString();
     context.fillStyle = outlineStyle;
     context.beginPath();
     this.outlinePath(
@@ -1451,10 +1441,10 @@ DialogBoxMorph.prototype.fontSize = 12;
 DialogBoxMorph.prototype.titleFontSize = 14;
 DialogBoxMorph.prototype.fontStyle = 'sans-serif';
 
-DialogBoxMorph.prototype.color = PushButtonMorph.prototype.color;
-DialogBoxMorph.prototype.titleTextColor = new Color(255, 255, 255);
+DialogBoxMorph.prototype.color = new Color(255, 255, 230);
+DialogBoxMorph.prototype.titleTextColor = new Color(255, 255, 230);
 DialogBoxMorph.prototype.titleBarColor
-    = PushButtonMorph.prototype.pressColor;
+    = DialogBoxMorph.prototype.titleTextColor.darker(30);
 
 DialogBoxMorph.prototype.contrast = 40;
 
@@ -1467,7 +1457,7 @@ DialogBoxMorph.prototype.buttonFontSize = 12;
 DialogBoxMorph.prototype.buttonCorner = 12;
 DialogBoxMorph.prototype.buttonEdge = 6;
 DialogBoxMorph.prototype.buttonPadding = 0;
-DialogBoxMorph.prototype.buttonOutline = 3;
+DialogBoxMorph.prototype.buttonOutline = 1;
 DialogBoxMorph.prototype.buttonOutlineColor
     = PushButtonMorph.prototype.color;
 DialogBoxMorph.prototype.buttonOutlineGradient = true;
@@ -1499,7 +1489,7 @@ DialogBoxMorph.prototype.init = function (target, action, environment) {
 
     // override inherited properites:
     this.isDraggable = true;
-    this.color = PushButtonMorph.prototype.color;
+    this.color = new Color(255, 255, 230);
     this.createLabel();
     this.createButtons();
     this.setExtent(new Point(300, 150));
@@ -1522,7 +1512,7 @@ DialogBoxMorph.prototype.inform = function (
         null,
         null,
         MorphicPreferences.isFlat ? null : new Point(1, 1),
-        new Color(255, 255, 255)
+        new Color(255, 255, 230)
     );
 
     if (!this.key) {
@@ -1557,7 +1547,7 @@ DialogBoxMorph.prototype.askYesNo = function (
         null,
         null,
         MorphicPreferences.isFlat ? null : new Point(1, 1),
-        new Color(255, 255, 255)
+        new Color(255, 255, 230)
     );
 
     if (!this.key) {
@@ -1704,7 +1694,7 @@ DialogBoxMorph.prototype.promptCode = function (
             null, // width
             null, // font name
             MorphicPreferences.isFlat ? null : new Point(1, 1),
-            new Color(255, 255, 255) // shadowColor
+            new Color(255, 255, 230) // shadowColor
         );
     }
 
@@ -1790,7 +1780,7 @@ DialogBoxMorph.prototype.promptVector = function (
             null, // width
             null, // font name
             MorphicPreferences.isFlat ? null : new Point(1, 1),
-            new Color(255, 255, 255) // shadowColor
+            new Color(255, 255, 230) // shadowColor
         );
     }
 
@@ -1912,7 +1902,7 @@ DialogBoxMorph.prototype.promptCredentials = function (
             null, // width
             null, // font name
             MorphicPreferences.isFlat ? null : new Point(1, 1),
-            new Color(255, 255, 255) // shadowColor
+            new Color(255, 255, 230) // shadowColor
         );
     }
 
@@ -2983,7 +2973,7 @@ InputFieldMorph.prototype.init = function (
     this.isNumeric = isNumeric || false;
 
     InputFieldMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.add(contents);
     this.add(arrow);
     contents.isDraggable = false;
@@ -3187,7 +3177,7 @@ InputFieldMorph.prototype.drawNew = function () {
     this.image = newCanvas(this.extent());
     context = this.image.getContext('2d');
     if (this.parent) {
-        if (this.parent.color.eq(new Color(255, 255, 255))) {
+        if (this.parent.color.eq(new Color(255, 255, 230))) {
             this.color = this.parent.color.darker(this.contrast * 0.1);
         } else {
             this.color = this.parent.color.lighter(this.contrast * 0.75);

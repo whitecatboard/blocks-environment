@@ -396,7 +396,7 @@ ListWatcherMorph.prototype.init = function (list, parentCell) {
         false,
         false,
         MorphicPreferences.isFlat ? new Point() : new Point(1, 1),
-        new Color(255, 255, 255)
+        new Color(255, 255, 230)
     );
     this.label.mouseClickLeft = function () {myself.startIndexMenu(); };
 
@@ -554,7 +554,7 @@ ListWatcherMorph.prototype.update = function (anyway) {
                 false,
                 false,
                 MorphicPreferences.isFlat ? new Point() : new Point(1, 1),
-                new Color(255, 255, 255)
+                new Color(255, 255, 230)
             );
             cell = new CellMorph(
                 this.list.at(idx),

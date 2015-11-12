@@ -1423,7 +1423,7 @@ Color.prototype.lighter = function (percent) {
     if (percent) {
         fract = (100 - percent) / 100;
     }
-    return this.mixed(fract, new Color(255, 255, 255));
+    return this.mixed(fract, new Color(255, 255, 230));
 };
 
 Color.prototype.dansDarker = function () {
@@ -3768,7 +3768,7 @@ HandleMorph.prototype.init = function (
     this.inset = new Point(insetX || 0, insetY || insetX || 0);
     this.type =  type || 'resize'; // can also be 'move', 'moveCenter'
     HandleMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.isDraggable = false;
     this.noticesTransparentClick = true;
     this.setExtent(new Point(size, size));
@@ -3787,7 +3787,7 @@ HandleMorph.prototype.drawNew = function () {
     this.drawOnCanvas(
         this.highlightImage,
         new Color(100, 100, 255),
-        new Color(255, 255, 255)
+        new Color(255, 255, 230)
     );
     this.image = this.normalImage;
     if (this.target) {
@@ -4384,13 +4384,13 @@ ColorPickerMorph.uber = Morph.prototype;
 // ColorPickerMorph instance creation:
 
 function ColorPickerMorph(defaultColor) {
-    this.init(defaultColor || new Color(255, 255, 255));
+    this.init(defaultColor || new Color(255, 255, 230));
 }
 
 ColorPickerMorph.prototype.init = function (defaultColor) {
     this.choice = defaultColor;
     ColorPickerMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.silentSetExtent(new Point(80, 80));
     this.drawNew();
 };
@@ -5145,7 +5145,7 @@ SpeechBubbleMorph.prototype.init = function (
         border || ((border === 0) ? 0 : 1),
         borderColor || new Color(140, 140, 140)
     );
-    this.color = color || new Color(230, 230, 230);
+    this.color = color || new Color(255, 255, 250);
     this.drawNew();
 };
 
@@ -6104,7 +6104,7 @@ MouseSensorMorph.prototype.init = function (edge, border, borderColor) {
     MouseSensorMorph.uber.init.call(this);
     this.edge = edge || 4;
     this.border = border || 2;
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.borderColor = borderColor || new Color();
     this.isTouched = false;
     this.upStep = 0.05;
@@ -6267,7 +6267,7 @@ InspectorMorph.prototype.buildPanes = function () {
     this.label = new TextMorph(this.target.toString());
     this.label.fontSize = MorphicPreferences.menuFontSize;
     this.label.isBold = true;
-    this.label.color = new Color(255, 255, 255);
+    this.label.color = new Color(255, 255, 230);
     this.label.drawNew();
     this.add(this.label);
 
@@ -6334,7 +6334,7 @@ InspectorMorph.prototype.buildPanes = function () {
     this.detail.acceptsDrops = false;
     this.detail.contents.acceptsDrops = false;
     this.detail.isTextLineWrapping = true;
-    this.detail.color = new Color(255, 255, 255);
+    this.detail.color = new Color(255, 255, 230);
     this.detail.hBar.alpha = 0.6;
     this.detail.vBar.alpha = 0.6;
     ctrl = new TextMorph('');
@@ -6351,7 +6351,7 @@ InspectorMorph.prototype.buildPanes = function () {
         this.work.acceptsDrops = false;
         this.work.contents.acceptsDrops = false;
         this.work.isTextLineWrapping = true;
-        this.work.color = new Color(255, 255, 255);
+        this.work.color = new Color(255, 255, 230);
         this.work.hBar.alpha = 0.6;
         this.work.vBar.alpha = 0.6;
         ev = new TextMorph('');
@@ -6767,7 +6767,7 @@ MenuMorph.prototype.createLabel = function () {
         'center'
     );
     text.alignment = 'center';
-    text.color = new Color(255, 255, 255);
+    text.color = new Color(255, 255, 230);
     text.backgroundColor = this.borderColor;
     text.drawNew();
     this.label = new BoxMorph(3, 0);
@@ -6798,7 +6798,7 @@ MenuMorph.prototype.drawNew = function () {
         this.edge = MorphicPreferences.isFlat ? 0 : 5;
         this.border = MorphicPreferences.isFlat ? 1 : 2;
     }
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.borderColor = new Color(60, 60, 60);
     this.silentSetExtent(new Point(0, 0));
 
@@ -7129,7 +7129,7 @@ StringMorph.prototype.init = function (
     this.currentlySelecting = false;
     this.startMark = 0;
     this.endMark = 0;
-    this.markedTextColor = new Color(255, 255, 255);
+    this.markedTextColor = new Color(255, 255, 230);
     this.markedBackgoundColor = new Color(60, 60, 120);
 
     // initialize inherited properties:
@@ -7673,7 +7673,7 @@ TextMorph.prototype.init = function (
     this.currentlySelecting = false;
     this.startMark = 0;
     this.endMark = 0;
-    this.markedTextColor = new Color(255, 255, 255);
+    this.markedTextColor = new Color(255, 255, 230);
     this.markedBackgoundColor = new Color(60, 60, 120);
 
     // initialize inherited properties:
@@ -8197,7 +8197,7 @@ TriggerMorph.prototype.init = function (
     TriggerMorph.uber.init.call(this);
 
     // override inherited properites:
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.drawNew();
 };
 
@@ -9144,7 +9144,7 @@ ListMorph.prototype.init = function (
     ListMorph.uber.init.call(this);
 
     this.contents.acceptsDrops = false;
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.hBar.alpha = 0.6;
     this.vBar.alpha = 0.6;
     this.elements = elements || [];
@@ -9286,7 +9286,7 @@ StringFieldMorph.prototype.init = function (
     this.isNumeric = isNumeric || false;
     this.text = null;
     StringFieldMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.isEditable = true;
     this.acceptsDrops = false;
     this.drawNew();

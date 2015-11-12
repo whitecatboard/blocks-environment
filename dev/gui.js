@@ -47,17 +47,14 @@ IDE_Morph.uber = Morph.prototype;
 
 // IDE_Morph preferences settings and skins
 
-IDE_Morph.prototype.setFlatDesign = function () {
+IDE_Morph.prototype.setDefaultDesign = function () {
     MorphicPreferences.isFlat = true;
-    BoardMorph.prototype.paletteColor = new Color(255, 255, 255);
-    BoardMorph.prototype.paletteTextColor = new Color(70, 70, 70);
-    BoardMorph.prototype.sliderColor = BoardMorph.prototype.paletteColor;
 
     IDE_Morph.prototype.buttonContrast = 30;
-    IDE_Morph.prototype.backgroundColor = new Color(200, 200, 200);
-    IDE_Morph.prototype.frameColor = new Color(255, 255, 255);
+    IDE_Morph.prototype.backgroundColor = new Color(50, 50, 50);
+    IDE_Morph.prototype.frameColor = new Color(255, 255, 230);
 
-    IDE_Morph.prototype.groupColor = new Color(230, 230, 230);
+    IDE_Morph.prototype.groupColor = new Color(255, 255, 250);
     IDE_Morph.prototype.sliderColor = BoardMorph.prototype.sliderColor;
     IDE_Morph.prototype.buttonLabelColor = new Color(70, 70, 70);
     IDE_Morph.prototype.tabColors = [
@@ -71,28 +68,8 @@ IDE_Morph.prototype.setFlatDesign = function () {
         IDE_Morph.prototype.groupColor.darker(30)
     ];
     IDE_Morph.prototype.scriptsPaneTexture = null;
-    IDE_Morph.prototype.padding = 1;
+    IDE_Morph.prototype.padding = 2;
 };
-
-IDE_Morph.prototype.setDefaultDesign = IDE_Morph.prototype.setFlatDesign;
-
-IDE_Morph.prototype.scriptsTexture = function () {
-    var pic = newCanvas(new Point(100, 100)), // bigger scales faster
-        ctx = pic.getContext('2d'),
-        i;
-    for (i = 0; i < 100; i += 4) {
-        ctx.fillStyle = this.frameColor.toString();
-        ctx.fillRect(i, 0, 1, 100);
-        ctx.fillStyle = this.groupColor.lighter(6).toString();
-        ctx.fillRect(i + 1, 0, 1, 100);
-        ctx.fillRect(i + 3, 0, 1, 100);
-        ctx.fillStyle = this.groupColor.toString();
-        ctx.fillRect(i + 2, 0, 1, 100);
-    }
-    return pic;
-};
-
-IDE_Morph.prototype.setDefaultDesign();
 
 // IDE_Morph instance creation:
 
@@ -239,8 +216,8 @@ IDE_Morph.prototype.createControlBar = function () {
         x,
         colors = [
             this.groupColor,
-            this.frameColor.darker(50),
-            this.frameColor.darker(50)
+            this.frameColor.darker(10),
+            this.frameColor.darker(20)
         ],
         myself = this;
 
@@ -415,7 +392,7 @@ IDE_Morph.prototype.createCategories = function () {
     this.categories.silentSetWidth(this.logo.width()); // width is fixed
 
     function addCategoryButton(category) {
-        var labelWidth = 75,
+        var labelWidth = 82,
             colors = [
                 myself.frameColor,
                 myself.frameColor.darker(50),
@@ -488,9 +465,7 @@ IDE_Morph.prototype.createCategories = function () {
     }
 
     BoardMorph.prototype.categories.forEach(function (cat) {
-        if (!contains(['custom'], cat)) {
-            addCategoryButton(cat);
-        }
+        addCategoryButton(cat);
     });
     fixCategoriesLayout();
     this.add(this.categories);
@@ -950,8 +925,6 @@ IDE_Morph.prototype.projectMenu = function () {
         shiftClicked = (world.currentKey === 16);
 
     menu = new MenuMorph(this);
-    menu.addItem('Project notes...', 'editProjectNotes');
-    menu.addLine();
     menu.addItem('New', 'createNewProject');
     menu.addItem('Save to disk', 'saveToDisk');
     menu.addItem(
@@ -987,7 +960,9 @@ IDE_Morph.prototype.projectMenu = function () {
                         };
                         frd.readAsText(aFile);
                     }
-
+                    for (i = myself.board.scripts.children.length; i >= 0; i --) {
+                        myself.board.scripts.removeChild(myself.board.scripts.children[i])
+                    }
                     readText(files[0]);
                 },
                 false
@@ -999,10 +974,8 @@ IDE_Morph.prototype.projectMenu = function () {
         'Load an WhiteCat project from a file'
     );
 
-
-    menu.addLine();
-
     if (shiftClicked) {
+        menu.addLine();
         menu.addItem(
             'Export all scripts as pic...',
             function () {myself.exportScriptsPicture(); },
@@ -1167,59 +1140,6 @@ IDE_Morph.prototype.aboutSnap = function () {
     translatorsBtn.hide();
     dlg.fixLayout();
     dlg.drawNew();
-};
-
-IDE_Morph.prototype.editProjectNotes = function () {
-    var dialog = new DialogBoxMorph().withKey('projectNotes'),
-        frame = new ScrollFrameMorph(),
-        text = new TextMorph(this.projectNotes || ''),
-        ok = dialog.ok,
-        myself = this,
-        size = 250,
-        world = this.world();
-
-    frame.padding = 6;
-    frame.setWidth(size);
-    frame.acceptsDrops = false;
-    frame.contents.acceptsDrops = false;
-
-    text.setWidth(size - frame.padding * 2);
-    text.setPosition(frame.topLeft().add(frame.padding));
-    text.enableSelecting();
-    text.isEditable = true;
-
-    frame.setHeight(size);
-    frame.fixLayout = nop;
-    frame.edge = InputFieldMorph.prototype.edge;
-    frame.fontSize = InputFieldMorph.prototype.fontSize;
-    frame.typeInPadding = InputFieldMorph.prototype.typeInPadding;
-    frame.contrast = InputFieldMorph.prototype.contrast;
-    frame.drawNew = InputFieldMorph.prototype.drawNew;
-    frame.drawRectBorder = InputFieldMorph.prototype.drawRectBorder;
-
-    frame.addContents(text);
-    text.drawNew();
-
-    dialog.ok = function () {
-        myself.projectNotes = text.text;
-        ok.call(this);
-    };
-
-    dialog.justDropped = function () {
-        text.edit();
-    };
-
-    dialog.labelString = 'Project Notes';
-    dialog.createLabel();
-    dialog.addBody(frame);
-    frame.drawNew();
-    dialog.addButton('ok', 'OK');
-    dialog.addButton('cancel', 'Cancel');
-    dialog.fixLayout();
-    dialog.drawNew();
-    dialog.popUp(world);
-    dialog.setCenter(world.center());
-    text.edit();
 };
 
 IDE_Morph.prototype.newProject = function () {

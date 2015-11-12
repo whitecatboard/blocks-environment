@@ -92,13 +92,13 @@ SyntaxElementMorph.prototype.setScale = function (num) {
     this.labelWidth = 450 * scale;
     this.labelWordWrap = true;
     this.dynamicInputLabels = true;
-    this.feedbackColor = new Color(255, 255, 255);
+    this.feedbackColor = new Color(255, 255, 230);
     this.feedbackMinHeight = 5;
     this.minSnapDistance = 20;
     this.reporterDropFeedbackPadding = 10 * scale;
     this.contrast = 65;
     this.labelContrast = 25;
-    this.activeHighlight = new Color(153, 255, 213);
+    this.activeHighlight = new Color(100, 255, 100);
     this.errorHighlight = new Color(173, 15, 0);
     this.activeBlur = 20;
     this.activeBorder = 4;
@@ -557,14 +557,14 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             break;
         case '%cmdRing':
             part = new RingMorph();
-            part.color = BoardMorph.prototype.blockColor.custom;
+            part.color = BoardMorph.prototype.blockColor['custom blocks'];
             part.selector = 'reifyScript';
             part.setSpec('%rc %ringparms');
             part.isDraggable = true;
             break;
         case '%repRing':
             part = new RingMorph();
-            part.color = BoardMorph.prototype.blockColor.custom;
+            part.color = BoardMorph.prototype.blockColor['custom blocks'];
             part.selector = 'reifyReporter';
             part.setSpec('%rr %ringparms');
             part.isDraggable = true;
@@ -909,7 +909,7 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             part.fontName = this.labelFontName;
             part.fontStyle = this.labelFontStyle;
             part.fontSize = this.fontSize;
-            part.color = new Color(255, 255, 255);
+            part.color = new Color(255, 255, 230);
             part.isBold = true;
             part.shadowColor = this.color.darker(this.labelContrast);
             part.shadowOffset = MorphicPreferences.isFlat ?
@@ -940,7 +940,7 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             MorphicPreferences.isFlat ?
                     new Point() : this.embossing, // shadowOffset
             this.color.darker(this.labelContrast), // shadowColor
-            new Color(255, 255, 255), // color
+            new Color(255, 255, 230), // color
             this.labelFontName // fontName
         );
     }
@@ -2158,7 +2158,7 @@ BlockMorph.prototype.forceNormalColoring = function () {
     var clr = BoardMorph.prototype.blockColor[this.category];
     this.setColor(clr);
     this.setLabelColor(
-        new Color(255, 255, 255),
+        new Color(255, 255, 230),
         clr.darker(this.labelContrast),
         new Point(-1, -1)
     );
@@ -2191,7 +2191,7 @@ BlockMorph.prototype.fixLabelColor = function () {
         var clr = BoardMorph.prototype.blockColor[this.category];
         if (this.color.eq(clr)) {
             this.setLabelColor(
-                new Color(255, 255, 255),
+                new Color(255, 255, 230),
                 clr.darker(this.labelContrast),
                 MorphicPreferences.isFlat ? null : new Point(-1, -1)
             );
@@ -3868,7 +3868,7 @@ function RingMorph() {
 
 RingMorph.prototype.init = function () {
     RingMorph.uber.init.call(this);
-    this.category = 'custom';
+    this.category = 'custom blocks';
     this.alpha = RingMorph.prototype.alpha;
     this.contrast = RingMorph.prototype.contrast;
     this.setExtent(new Point(200, 80));
@@ -3889,7 +3889,7 @@ RingMorph.prototype.embed = function (aBlock, inputNames) {
     var slot;
 
     // set my color
-    this.color = BoardMorph.prototype.blockColor.custom;
+    this.color = BoardMorph.prototype.blockColor['custom blocks'];
     this.isDraggable = true;
 
     // set my type, selector, and nested block:
@@ -4018,7 +4018,6 @@ ScriptsMorph.prototype.init = function (owner) {
     this.focus = null;
 
     ScriptsMorph.uber.init.call(this);
-    this.setColor(new Color(70, 70, 70));
 };
 
 // ScriptsMorph deep copying:
@@ -4612,7 +4611,7 @@ ArgMorph.prototype.listIcon = function () {
 
     icon = newCanvas(new Point(10,13));
     context = icon.getContext('2d');
-    context.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    context.fillStyle = 'rgba(255, 255, 230, 0.2)';
     context.fillRect(0, 0, icon.width, icon.height);
     context.strokeStyle = 'rgb(50, 50, 50)';
     context.strokeRect(0, 0, icon.width, icon.height / 3);
@@ -5692,7 +5691,7 @@ InputSlotMorph.prototype.init = function (
     this.constant = null;
 
     InputSlotMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.add(contents);
     this.add(arrow);
     contents.isEditable = true;
@@ -6617,7 +6616,7 @@ TextSlotMorph.prototype.init = function (
     this.constant = null;
 
     InputSlotMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 255);
+    this.color = new Color(255, 255, 230);
     this.add(contents);
     this.add(arrow);
     contents.isEditable = true;

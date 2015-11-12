@@ -42,7 +42,7 @@ BoardMorph.prototype.categories =
         'data',
         'input / output',
         'comm',
-        'custom'
+        'custom blocks'
     ];
 
 BoardMorph.prototype.blockColor = {
@@ -51,22 +51,14 @@ BoardMorph.prototype.blockColor = {
     data : new Color(243, 118, 29),
     'input / output' : new Color(207, 74, 217),
     comm: new Color(130, 92, 124),
-    custom : new Color(150, 150, 150)
+    'custom blocks' : new Color(150, 150, 150)
 };
 
-BoardMorph.prototype.paletteColor = new Color(55, 55, 55);
-BoardMorph.prototype.paletteTextColor = new Color(230, 230, 230);
+BoardMorph.prototype.paletteColor = new Color(255, 255, 230);
+BoardMorph.prototype.paletteTextColor = new Color(255, 255, 250);
 BoardMorph.prototype.sliderColor
     = BoardMorph.prototype.paletteColor.lighter(30);
 BoardMorph.prototype.isCachingPrimitives = true;
-
-BoardMorph.prototype.bubbleColor = new Color(255, 255, 255);
-BoardMorph.prototype.bubbleFontSize = 14;
-BoardMorph.prototype.bubbleFontIsBold = true;
-BoardMorph.prototype.bubbleCorner = 10;
-BoardMorph.prototype.bubbleBorder = 3;
-BoardMorph.prototype.bubbleBorderColor = new Color(190, 190, 190);
-BoardMorph.prototype.bubbleMaxTextWidth = 130;
 
 BoardMorph.prototype.initBlocks = function () {
     BoardMorph.prototype.blocks = {
@@ -141,19 +133,19 @@ BoardMorph.prototype.initBlocks = function () {
         // Operators
         reifyScript: {
             type: 'ring',
-            category: 'custom',
+            category: 'custom blocks',
             spec: '%rc %ringparms',
             alias: 'command ring lambda'
         },
         reifyReporter: {
             type: 'ring',
-            category: 'custom',
+            category: 'custom blocks',
             spec: '%rr %ringparms',
             alias: 'reporter ring lambda'
         },
         reifyPredicate: {
             type: 'ring',
-            category: 'custom',
+            category: 'custom blocks',
             spec: '%rp %ringparms',
             alias: 'predicate ring lambda'
         },
@@ -613,6 +605,7 @@ BoardMorph.prototype.getReporterResult = function (block) {
 // BoardMorph duplicating (fullCopy)
 
 BoardMorph.prototype.fullCopy = function () {
+    alert('BoardMorph.prototype.fullCopy');
     var c = BoardMorph.uber.fullCopy.call(this),
         myself = this,
         cb;
@@ -757,7 +750,15 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('reportNewList'));
         blocks.push(block('reportListItem'));
 
-        blocks.push('=');
+    } else if (cat === 'input / output') {
+
+        blocks.push(block('setPinDigital'));
+        blocks.push(block('setPinAnalog'));
+        blocks.push('-');
+        blocks.push(block('getPinDigital'));
+        blocks.push(block('getPinAnalog'));
+
+    } else if (cat === 'custom blocks') {
 
         button = new PushButtonMorph(
             null,
@@ -785,14 +786,6 @@ BoardMorph.prototype.blockTemplates = function (category) {
         button.selector = 'addCustomBlock';
         button.showHelp = BlockMorph.prototype.showHelp;
         blocks.push(button);
-    } else if (cat === 'input / output') {
-
-        blocks.push(block('setPinDigital'));
-        blocks.push(block('setPinAnalog'));
-        blocks.push('-');
-        blocks.push(block('getPinDigital'));
-        blocks.push(block('getPinAnalog'));
-
     }
     return blocks;
 };
@@ -890,7 +883,7 @@ BoardMorph.prototype.freshPalette = function (category) {
         if (definition.category === category ||
                 (category === 'data'
                     && contains(
-                        ['custom'],
+                        ['custom blocks'],
                         definition.category
                     ))) {
             block = definition.templateInstance();
@@ -1012,8 +1005,7 @@ BoardMorph.prototype.searchBlocks = function (
         if (focus) {focus.destroy(); }
         if (!selection || !scriptFocus) {return; }
         focus = selection.outline(
-            MorphicPreferences.isFlat ? new Color(150, 200, 255)
-                    : new Color(255, 255, 255),
+            new Color(150, 200, 255),
             2
         );
         searchPane.contents.add(focus);

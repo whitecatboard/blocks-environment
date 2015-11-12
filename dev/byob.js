@@ -453,7 +453,7 @@ CustomCommandBlockMorph.prototype.refreshPrototype = function () {
             this.drawNew();
         }
     }
-    myself.setCategory(hat.blockCategory || 'custom');
+    myself.setCategory(hat.blockCategory || 'custom blocks');
     hat.fixBlockColor();
 
     // update the (new) prototype's appearance
@@ -614,7 +614,7 @@ CustomCommandBlockMorph.prototype.labelPart = function (spec) {
     } else {
         part = new BlockLabelFragmentMorph(spec);
         part.fontSize = this.fontSize;
-        part.color = new Color(255, 255, 255);
+        part.color = new Color(255, 255, 230);
         part.isBold = true;
         part.shadowColor = this.color.darker(this.labelContrast);
         part.shadowOffset = this.embossing;
@@ -1105,7 +1105,7 @@ function BlockDialogMorph(target, action, environment) {
 BlockDialogMorph.prototype.init = function (target, action, environment) {
     // additional properties:
     this.blockType = 'command';
-    this.category = 'custom';
+    this.category = 'custom blocks';
     this.types = null;
     this.categories = null;
 
@@ -2595,7 +2595,7 @@ InputSlotDialogMorph.prototype.createSlotTypeButtons = function () {
     // default values
     defLabel = new StringMorph(localize('Default Value:'));
     defLabel.fontSize = this.slots.radioButtonSingle.fontSize;
-    defLabel.setColor(new Color(255, 255, 255));
+    defLabel.setColor(new Color(255, 255, 230));
     defLabel.refresh = function () {
         if (myself.isExpanded && contains(
                 ['%s', '%n', '%txt', '%anyUE'],
@@ -2708,7 +2708,7 @@ InputSlotDialogMorph.prototype.addSlotTypeButton = function (
     button.drawNew();
     button.fixLayout();
     button.label.isBold = false;
-    button.label.setColor(new Color(255, 255, 255));
+    button.label.setColor(new Color(255, 255, 230));
     if (!this.cachedRadioButton) {
         this.cachedRadioButton = button;
     }
@@ -2739,7 +2739,7 @@ InputSlotDialogMorph.prototype.addSlotArityButton = function (
     button.drawNew();
     button.fixLayout();
     // button.label.isBold = false;
-    button.label.setColor(new Color(255, 255, 255));
+    button.label.setColor(new Color(255, 255, 230));
     this.slots.add(button);
     if (!this.cachedRadioButton) {
         this.cachedRadioButton = button;
