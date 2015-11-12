@@ -51,7 +51,7 @@ IDE_Morph.prototype.setDefaultDesign = function () {
     MorphicPreferences.isFlat = true;
 
     IDE_Morph.prototype.buttonContrast = 30;
-    IDE_Morph.prototype.backgroundColor = new Color(50, 50, 50);
+    IDE_Morph.prototype.backgroundColor = new Color(200, 200, 200);
     IDE_Morph.prototype.frameColor = new Color(255, 255, 230);
 
     IDE_Morph.prototype.groupColor = new Color(255, 255, 250);
@@ -201,7 +201,7 @@ IDE_Morph.prototype.createLogo = function () {
     };
 
     this.logo.color = new Color();
-    this.logo.setExtent(new Point(200, 28)); // dimensions are fixed
+    this.logo.setExtent(new Point(200, 35)); // dimensions are fixed
     this.add(this.logo);
 };
 
@@ -267,8 +267,6 @@ IDE_Morph.prototype.createControlBar = function () {
     button.pressColor = colors[2];
     button.labelMinExtent = new Point(36, 18);
     button.padding = 0;
-    button.labelShadowOffset = new Point(-1, -1);
-    button.labelShadowColor = colors[1];
     button.labelColor = new Color(0, 200, 0);
     button.contrast = this.buttonContrast;
     button.drawNew();
@@ -291,8 +289,6 @@ IDE_Morph.prototype.createControlBar = function () {
     button.pressColor = colors[2];
     button.labelMinExtent = new Point(36, 18);
     button.padding = 0;
-    button.labelShadowOffset = new Point(-1, -1);
-    button.labelShadowColor = colors[1];
     button.labelColor = this.buttonLabelColor;
     button.contrast = this.buttonContrast;
     button.drawNew();
@@ -315,8 +311,6 @@ IDE_Morph.prototype.createControlBar = function () {
     button.pressColor = colors[2];
     button.labelMinExtent = new Point(36, 18);
     button.padding = 0;
-    button.labelShadowOffset = new Point(-1, -1);
-    button.labelShadowColor = colors[1];
     button.labelColor = this.buttonLabelColor;
     button.contrast = this.buttonContrast;
     button.drawNew();
@@ -423,8 +417,6 @@ IDE_Morph.prototype.createCategories = function () {
 
         button.corner = 8;
         button.padding = 0;
-        button.labelShadowOffset = new Point(-1, -1);
-        button.labelShadowColor = colors[1];
         button.labelColor = myself.buttonLabelColor;
         button.fixLayout();
         button.refresh();
@@ -521,7 +513,7 @@ IDE_Morph.prototype.createBoardEditor = function () {
     this.scriptEditor = new ScrollFrameMorph(
             scripts,
             null,
-            this.sliderColor
+            this.sliderColor.darker(20)
             );
     this.scriptEditor.padding = 10;
     this.scriptEditor.growth = 50;
@@ -553,10 +545,11 @@ IDE_Morph.prototype.fixLayout = function (situation) {
 
         // categories
         this.categories.setLeft(this.logo.left());
-        this.categories.setTop(this.logo.bottom());
+        this.categories.setTop(this.logo.bottom() + 1);
 
         if (this.scriptEditor.isVisible) {
-            this.scriptEditor.setPosition(this.categories.topRight());
+            this.scriptEditor.setTop(this.categories.top());
+            this.scriptEditor.setLeft(this.categories.right() + 1);
             this.scriptEditor.setExtent(new Point(
                 this.width() -  this.categories.width(),
                 this.bottom() - this.scriptEditor.top()
@@ -567,7 +560,7 @@ IDE_Morph.prototype.fixLayout = function (situation) {
 
     // palette
     this.palette.setLeft(this.logo.left());
-    this.palette.setTop(this.categories.bottom());
+    this.palette.setTop(this.categories.bottom() + 1);
     this.palette.setHeight(this.bottom() - this.palette.top());
 
     Morph.prototype.trackChanges = true;
@@ -652,16 +645,6 @@ IDE_Morph.prototype.stopAllScripts = function () {
 
 // IDE_Morph skins
 
-IDE_Morph.prototype.defaultDesign = function () {
-    this.flatDesign();
-};
-
-IDE_Morph.prototype.flatDesign = function () {
-    this.setFlatDesign();
-    this.refreshIDE();
-    this.saveSetting('design', 'flat');
-};
-
 IDE_Morph.prototype.refreshIDE = function () {
     var projectData;
 
@@ -678,8 +661,7 @@ IDE_Morph.prototype.refreshIDE = function () {
 // IDE_Morph settings persistance
 
 IDE_Morph.prototype.applySavedSettings = function () {
-    var design = this.getSetting('design'),
-        zoom = this.getSetting('zoom'),
+    var zoom = this.getSetting('zoom'),
         language = this.getSetting('language'),
         click = this.getSetting('click'),
         longform = this.getSetting('longform'),
@@ -687,12 +669,7 @@ IDE_Morph.prototype.applySavedSettings = function () {
         plainprototype = this.getSetting('plainprototype'),
         keyboard = this.getSetting('keyboard');
 
-    // design
-    if (design === 'flat') {
-        this.setFlatDesign();
-    } else {
-        this.setDefaultDesign();
-    }
+    this.setDefaultDesign();
 
     // blocks zoom
     if (zoom) {
@@ -890,14 +867,6 @@ IDE_Morph.prototype.settingsMenu = function () {
             'check to run\nthe edited script\nwhen moving the slider'
         );
     }
-    addPreference(
-        'Animations',
-        function () {myself.isAnimating = !myself.isAnimating; },
-        myself.isAnimating,
-        'uncheck to disable\nIDE animations',
-        'check to enable\nIDE animations',
-        true
-    );
     addPreference(
         'Keyboard Editing',
         function () {
@@ -1157,14 +1126,14 @@ IDE_Morph.prototype.newProject = function () {
 };
 
 IDE_Morph.prototype.loadFromString = function (str) {
-    //try {
+    try {
         this.serializer.openProject(
                 this.serializer.load(str, this),
                 this
                 );
-  /*  } catch (err) {
+    } catch (err) {
         this.showMessage('Load failed: ' + err);
-    }*/
+    }
 }
 
 IDE_Morph.prototype.saveToDisk = function (name, plain) {
@@ -1185,35 +1154,41 @@ IDE_Morph.prototype.saveToDisk = function (name, plain) {
         try {
             menu = this.showMessage('Exporting');
             str = this.serializer.serialize(this.board);
-            saveFile(name, str);
+            myself.saveFile(name + '.xml', str);
             menu.destroy();
         } catch (err) {
             this.showMessage('Export failed: ' + err);
         }
     }
 
+};
+
+IDE_Morph.prototype.saveFile = function(name, contents) {
     function homePath() {
         return process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME'] + ((process.platform == 'win32') ? '\\' : '/')
     }
 
-    function saveFile(name, contents) {
-        var inp = document.createElement('input');
-        if (myself.filePicker) {
-            document.body.removeChild(myself.filePicker);
-            myself.filePicker = null;
-        }
-        inp.nwsaveas = homePath() + name + '.xml';
-        inp.type = 'file';
-        inp.style.color = "transparent";
-        inp.style.backgroundColor = "transparent";
-        inp.style.border = "none";
-        inp.style.outline = "none";
-        inp.style.position = "absolute";
-        inp.style.top = "0px";
-        inp.style.left = "0px";
-        inp.style.width = "0px";
-        inp.style.height = "0px";
-        inp.addEventListener(
+    var inp = document.createElement('input'),
+        myself = this;
+
+    if (this.filePicker) {
+        document.body.removeChild(this.filePicker);
+        this.filePicker = null;
+    }
+
+    inp.nwsaveas = homePath() + name;
+    inp.type = 'file';
+    inp.style.color = "transparent";
+    inp.style.backgroundColor = "transparent";
+    inp.style.border = "none";
+    inp.style.outline = "none";
+    inp.style.position = "absolute";
+    inp.style.top = "0px";
+    inp.style.left = "0px";
+    inp.style.width = "0px";
+    inp.style.height = "0px";
+
+    inp.addEventListener(
             "change",
             function (e) {
                 document.body.removeChild(inp);
@@ -1224,12 +1199,13 @@ IDE_Morph.prototype.saveToDisk = function (name, plain) {
                 myself.showMessage('Exported!', 1);
             },
             false
-        );
-        document.body.appendChild(inp);
-        myself.filePicker = inp;
-        inp.click();
-    }
-};
+            );
+
+    document.body.appendChild(inp);
+    myself.filePicker = inp;
+
+    inp.click();
+}
 
 IDE_Morph.prototype.exportScriptsPicture = function () {
     var pics = [],
@@ -1266,7 +1242,7 @@ IDE_Morph.prototype.exportScriptsPicture = function () {
         y += each.height;
     });
 
-    window.open(pic.toDataURL());
+    this.saveFile('whitecat-scripts.png', pic.toDataURL()); // ToDo!
 };
 
 IDE_Morph.prototype.setURL = function (str) {
@@ -1551,40 +1527,6 @@ IDE_Morph.prototype.setBlocksScale = function (num) {
     this.fixLayout();
     this.openProjectString(projectData);
     this.saveSetting('zoom', num);
-};
-
-// IDE_Morph synchronous Http data fetching
-
-IDE_Morph.prototype.getURL = function (url) {
-    var request = new XMLHttpRequest(),
-        myself = this;
-    try {
-        request.open('GET', url, false);
-        request.send();
-        if (request.status === 200) {
-            return request.responseText;
-        }
-        throw new Error('unable to retrieve ' + url);
-    } catch (err) {
-        myself.showMessage(err);
-        return;
-    }
-};
-
-IDE_Morph.prototype.getURLsbeOrRelative = function (url) {
-    var request = new XMLHttpRequest(),
-        myself = this;
-    try {
-        request.open('GET', baseURL + url, false);
-        request.send();
-        if (request.status === 200) {
-            return request.responseText;
-        }
-        return myself.getURL(url);
-    } catch (err) {
-        myself.showMessage(err);
-        return;
-    }
 };
 
 // IDE_Morph user dialog shortcuts

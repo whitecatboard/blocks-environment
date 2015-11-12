@@ -3281,3 +3281,5 @@ InputFieldMorph.prototype.drawRectBorder = function (context) {
     context.lineTo(this.width() - shift, this.height() - this.edge);
     context.stroke();
 };
+
+
