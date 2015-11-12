@@ -143,7 +143,7 @@ IDE_Morph.prototype.openIn = function (world) {
     this.reactToWorldResize(world.bounds);
 
     if (this.userLanguage) {
-        this.setLanguage(this.userLanguage, interpretUrlAnchors);
+        this.setLanguage(this.userLanguage);
     }
 };
 
@@ -190,7 +190,7 @@ IDE_Morph.prototype.createLogo = function () {
         var context = this.image.getContext('2d');
         context.drawImage(
             this.cachedTexture,
-            5,
+            25,
             Math.round((this.height() - this.cachedTexture.height) / 2)
         );
         this.changed();
@@ -382,14 +382,14 @@ IDE_Morph.prototype.createCategories = function () {
         this.categories.destroy();
     }
     this.categories = new Morph();
-    this.categories.color = this.groupColor;
+    this.categories.color = this.frameColor;
     this.categories.silentSetWidth(this.logo.width()); // width is fixed
 
     function addCategoryButton(category) {
         var labelWidth = 82,
             colors = [
                 myself.frameColor,
-                myself.frameColor.darker(50),
+                myself.frameColor.darker(20),
                 BoardMorph.prototype.blockColor[category]
             ],
             button;
@@ -1436,13 +1436,16 @@ IDE_Morph.prototype.reflectLanguage = function (lang, callback) {
     var projectData;
     SnapTranslator.language = lang;
     BoardMorph.prototype.initBlocks();
+    this.categories = null;
     this.createCategories();
     this.fixLayout();
+    /*
     if (this.loadNewProject) {
         this.newProject();
     } else {
         this.openProjectString(projectData);
     }
+    */
     this.saveSetting('language', lang);
     if (callback) {callback.call(this); }
 };

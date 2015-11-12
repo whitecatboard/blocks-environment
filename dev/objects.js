@@ -50,7 +50,7 @@ BoardMorph.prototype.blockColor = {
     operators : new Color(98, 194, 19),
     data : new Color(243, 118, 29),
     'input / output' : new Color(207, 74, 217),
-    comm: new Color(130, 92, 124),
+    comm: new Color(80, 180, 255),
     'custom blocks' : new Color(150, 150, 150)
 };
 
