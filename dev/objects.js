@@ -370,7 +370,7 @@ BoardMorph.prototype.init = function (ide) {
     this.serialLib = require('serialport');
     this.SerialPort = this.serialLib.SerialPort;
 
-    this.serialConnect();
+    if (!this.serialPort) { this.serialConnect() };
 
     BoardMorph.uber.init.call(this);
 };
@@ -455,7 +455,6 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
 BoardMorph.prototype.parseSerialResponse = function(data) {
     var myself = this;
 
-    // We use a prefix to know whether this data is meant for us
     if (data === 'C') {
         // We've been given permission to send the next chunk of a script
         if (this.outputData) {
@@ -479,15 +478,15 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             }
         }
     } else if (data.slice(0,2) === 'wc') {
+        // We use a prefix to know whether this piece of data is meant for us
         try {
-
             var id = data.match(/^wc:(.*?):/, '$1')[1],
                 contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
 
             if (id === 'r') {
                 // It's a reporter block
                 myself.reporterBlock.showBubble(contents);
-            } else {
+            }  else {
                 // It's a report command block
                 myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
             }
@@ -495,6 +494,12 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 5);
         }
+    } else if (data.slice(0,2) === 'dc') {
+        // It's a dead coroutine and its corresponding stack should be un-highlighted
+        var id = data.match(/^dc:(.*?):/, '$1')[1],
+            co = myself.findCoroutine(Number.parseInt(id));
+        // This coroutine may not exist anymore
+        if (co) { co.topBlock.removeHighlight() };
     } else {
         console.log(data)
     }
@@ -579,6 +584,7 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
         var coroutine = myself.addCoroutineForBlock(topBlock);
         myself.outputData += coroutine.body + ';\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
+            if (!topBlock.getHighlight()) { topBlock.addHighlight() };
             coroutinesToRun.push(coroutine);
         };
     })

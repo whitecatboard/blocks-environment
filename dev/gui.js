@@ -664,6 +664,7 @@ IDE_Morph.prototype.fireGreenFlagEvent = function () {
 
 IDE_Morph.prototype.fireStopAllEvent = function () {
     this.board.stopAll();
+    this.board.scripts.children.forEach(function(each){ each.removeHighlight() });
 };
 
 IDE_Morph.prototype.runScripts = function () {
