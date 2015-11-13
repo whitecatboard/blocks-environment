@@ -51,7 +51,7 @@ IDE_Morph.prototype.setDefaultDesign = function () {
     MorphicPreferences.isFlat = true;
 
     IDE_Morph.prototype.buttonContrast = 30;
-    IDE_Morph.prototype.backgroundColor = new Color(200, 200, 200);
+    IDE_Morph.prototype.backgroundColor = new Color(255, 237, 167);
     IDE_Morph.prototype.frameColor = new Color(255, 255, 230);
 
     IDE_Morph.prototype.groupColor = new Color(255, 255, 250);
@@ -237,7 +237,7 @@ IDE_Morph.prototype.createControlBar = function () {
     button = new PushButtonMorph(
         this,
         'stopAllScripts',
-        new SymbolMorph('octagon', 14)
+        new SymbolMorph('square', 14)
     );
     button.corner = 12;
     button.color = colors[0];
@@ -245,8 +245,6 @@ IDE_Morph.prototype.createControlBar = function () {
     button.pressColor = colors[2];
     button.labelMinExtent = new Point(36, 18);
     button.padding = 0;
-    button.labelShadowOffset = new Point(-1, -1);
-    button.labelShadowColor = colors[1];
     button.labelColor = new Color(200, 0, 0);
     button.contrast = this.buttonContrast;
     button.drawNew();
@@ -259,7 +257,7 @@ IDE_Morph.prototype.createControlBar = function () {
     button = new PushButtonMorph(
         this,
         'pressStart',
-        new SymbolMorph('flag', 14)
+        new SymbolMorph('pointRight', 14)
     );
     button.corner = 12;
     button.color = colors[0];
@@ -369,8 +367,6 @@ IDE_Morph.prototype.createBoard = function () {
     if (this.board) { this.board.destroy() };
     this.board = new BoardMorph(this);
     this.add(this.board);
-    this.board.setLeft(100);
-    this.board.setTop(100);
     this.board.hide();
 }
 
@@ -545,10 +541,10 @@ IDE_Morph.prototype.fixLayout = function (situation) {
 
         // categories
         this.categories.setLeft(this.logo.left());
-        this.categories.setTop(this.logo.bottom() + 1);
+        this.categories.setTop(this.logo.bottom());
 
         if (this.scriptEditor.isVisible) {
-            this.scriptEditor.setTop(this.categories.top());
+            this.scriptEditor.setTop(this.categories.top() + 1);
             this.scriptEditor.setLeft(this.categories.right() + 1);
             this.scriptEditor.setExtent(new Point(
                 this.width() -  this.categories.width(),
@@ -560,7 +556,7 @@ IDE_Morph.prototype.fixLayout = function (situation) {
 
     // palette
     this.palette.setLeft(this.logo.left());
-    this.palette.setTop(this.categories.bottom() + 1);
+    this.palette.setTop(this.categories.bottom());
     this.palette.setHeight(this.bottom() - this.palette.top());
 
     Morph.prototype.trackChanges = true;
@@ -797,14 +793,6 @@ IDE_Morph.prototype.settingsMenu = function () {
         'userSetBlocksScale'
     );
     menu.addLine();
-    addPreference(
-        'Blurred shadows',
-        'toggleBlurredShadows',
-        useBlurredShadows,
-        'uncheck to use solid drop\nshadows and highlights',
-        'check to use blurred drop\nshadows and highlights',
-        true
-    );
     addPreference(
         'Zebra coloring',
         'toggleZebraColoring',
@@ -1340,10 +1328,6 @@ IDE_Morph.prototype.toggleZebraColoring = function () {
     scripts.forEach(function (topBlock) {
         topBlock.fixBlockColor(null, true);
     });
-};
-
-IDE_Morph.prototype.toggleBlurredShadows = function () {
-    window.useBlurredShadows = !useBlurredShadows;
 };
 
 IDE_Morph.prototype.toggleLongFormInputDialog = function () {

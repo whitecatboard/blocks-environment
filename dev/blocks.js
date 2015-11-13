@@ -885,7 +885,7 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             part = new ReporterSlotMorph(true);
             break;
         case '%greenflag':
-            part = new SymbolMorph('flag');
+            part = new SymbolMorph('pointRight');
             part.size = this.fontSize * 1.5;
             part.color = new Color(0, 200, 0);
             part.isProtectedLabel = true; // doesn't participate in zebraing
@@ -1262,7 +1262,7 @@ SyntaxElementMorph.prototype.showBubble = function (value, exportPic) {
     }
     bubble = new SpeechBubbleMorph(
         morphToShow,
-        null,
+        new Color(255, 255, 100),
         Math.max(this.rounding - 2, 6),
         0
     );
@@ -1861,6 +1861,7 @@ BlockMorph.prototype.relabel = function (alternativeSelectors) {
         myself = this;
     alternativeSelectors.forEach(function (sel) {
         var block = BoardMorph.prototype.blockForSelector(sel);
+        if (!block) { return };
         block.restoreInputs(oldInputs);
         block.fixBlockColor(null, true);
         block.addShadow(new Point(3, 3));
@@ -1975,7 +1976,6 @@ BlockMorph.prototype.eraseHoles = function (context) {
 BlockMorph.prototype.addHighlight = function (oldHighlight) {
     var isHidden = !this.isVisible,
         highlight;
-
     if (isHidden) {this.show(); }
     highlight = this.highlight(
         oldHighlight ? oldHighlight.color : this.activeHighlight,
@@ -2007,6 +2007,7 @@ BlockMorph.prototype.addErrorHighlight = function () {
 
 BlockMorph.prototype.removeHighlight = function () {
     var highlight = this.getHighlight();
+
     if (highlight !== null) {
         this.fullChanged();
         this.removeChild(highlight);
@@ -3456,6 +3457,7 @@ ReporterBlockMorph.prototype.mouseClickLeft = function (pos) {
         );
     } else {
         var board = this.receiver();
+        this.addHighlight(this.removeHighlight());
         board.getReporterResult(this);
     }
 };

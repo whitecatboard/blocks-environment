@@ -143,12 +143,6 @@ BoardMorph.prototype.initBlocks = function () {
             spec: '%rr %ringparms',
             alias: 'reporter ring lambda'
         },
-        reifyPredicate: {
-            type: 'ring',
-            category: 'custom blocks',
-            spec: '%rp %ringparms',
-            alias: 'predicate ring lambda'
-        },
         reportSum: {
             type: 'reporter',
             category: 'operators',
@@ -333,7 +327,13 @@ BoardMorph.prototype.blockAlternatives = {
 
     // variables
     doSetVar: ['doChangeVar'],
-    doChangeVar: ['doSetVar']
+    doChangeVar: ['doSetVar'],
+
+    // input / output
+    setPinDigital: ['setPinAnalog'],
+    setPinAnalog: ['setPinDigital'],
+    getPinDigital: ['getPinAnalog'],
+    getPinAnalog: ['getPinDigital']
 };
 
 // BoardMorph instance creation
@@ -379,7 +379,7 @@ BoardMorph.prototype.discoverPorts = function(callback) {
     this.serialLib.list(function (err, ports) { 
         if (ports) { 
             ports.forEach(function(each) { 
-                if(portcheck.test(each.comName)) {
+                if (each && portcheck.test(each.comName)) {
                     portList[each.comName] = each.comName; 
                 }
             });
@@ -435,6 +435,9 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             myself.serialPort.on('data', function(data) {
                 myself.parseSerialResponse(data);
             });
+            myself.serialPort.on('disconnect', function() {
+                myself.serialPort.close(function() { myself.serialConnect() });
+            });
         });
 
         // PinOut depends on the board
@@ -478,6 +481,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             if (id === 'r') {
                 // It's a reporter block
                 myself.reporterBlock.showBubble(contents);
+                myself.reporterBlock.removeHighlight();
             }  else {
                 // It's a report command block
                 myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
@@ -647,7 +651,7 @@ BoardMorph.prototype.blockForSelector = function (selector, setDefaults) {
     block.color = this.blockColor[info.category];
     block.category = info.category;
     block.selector = migration ? migration.selector : selector;
-    if (contains(['reifyReporter', 'reifyPredicate'], block.selector)) {
+    if (block.selector === 'reifyReporter') {
         block.isStatic = true;
     }
     block.setSpec(localize(info.spec));
@@ -714,7 +718,6 @@ BoardMorph.prototype.blockTemplates = function (category) {
 
         blocks.push(block('reifyScript'));
         blocks.push(block('reifyReporter'));
-        blocks.push(block('reifyPredicate'));
         blocks.push('#');
         blocks.push('-');
         blocks.push(block('reportSum'));
@@ -821,7 +824,7 @@ BoardMorph.prototype.freshPalette = function (category) {
         var menu = new MenuMorph(),
             more = {
                 operators:
-                    ['reifyScript', 'reifyReporter', 'reifyPredicate'],
+                    ['reifyScript', 'reifyReporter'],
                 control:
                     ['doWarp'],
                 variables: ['reportNewList']
