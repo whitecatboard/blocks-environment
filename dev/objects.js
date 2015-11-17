@@ -521,7 +521,7 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('a = adc.setup(adc.ADC1, adc.AVDD, 3300);\r');
+    this.serialPort.write('');//a = adc.setup(adc.ADC1, adc.AVDD, 3300);\r');
 }
 
 // Coroutine handling
