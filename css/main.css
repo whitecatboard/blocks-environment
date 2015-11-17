@@ -188,15 +188,13 @@ a:hover {
 
 .top-logo {
     width: 100%;
+    text-align: center;
 }
 
 .top-logo pre {
     line-height: 1em;
     font-size: 2em;
-    display: block;
-    width: 9em;
-    margin: 0 auto;
-    text-align: left;
+    margin: 0;
 }
 
 .board-prototype {
