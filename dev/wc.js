@@ -313,12 +313,16 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
 
 LuaExpression.prototype.setMQTTBroker = function(id, url, port, user, password) {
     this.code
-        = 'm = (function () local c = mqtt.client("' 
-        + id + '", "' + url + '", ' + port + ', false); c:connect("' 
-        + user + '","' + password + '"); return c; end)()\r';
+        = 'm = (function () local c = mqtt.client(' 
+        + id + ', ' + url + ', ' + port + ', false); c:connect(' 
+        + user + ',' + password + '); return c; end)()\r';
+}
+
+LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic) {
+    this.code = 'if (m ~= null) then m:publish(' + topic + ', ' + message + ', mqtt.QOS0) end\r';
 }
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
-    this.code = 'if (m ~= null) then m:publish("' + topic + '", "' + message + '", mqtt.QOS0) end\r';
+    this.code = 'if (m ~= null) then m:publish(' + topic + ', ' + message + ', mqtt.QOS0) end\r';
 }
 

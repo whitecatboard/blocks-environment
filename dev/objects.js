@@ -290,6 +290,12 @@ BoardMorph.prototype.initBlocks = function () {
             spec: 'connect as %s to broker %s : %n user %s password: %s',
             defaults: ['wc' + Math.floor(Math.random() * 100), 'isatpoint.com', 1883, '', '']
         },
+        subscribeToMQTTmessage: {
+            type: 'hat',
+            category: 'comm',
+            spec: 'when I receive %s at topic %s',
+            defaults: ['blink', '/test']
+        },
         publishMQTTmessage: {
             type: 'command',
             category: 'comm',
@@ -777,6 +783,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
     } else if (cat === 'comm') {
 
         blocks.push(block('setMQTTBroker'));
+        blocks.push(block('subscribeToMQTTmessage'));
         blocks.push(block('publishMQTTmessage'));
 
     } else if (cat === 'custom blocks') {
