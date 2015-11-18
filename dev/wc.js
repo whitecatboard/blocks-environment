@@ -305,6 +305,20 @@ LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
-    var pin = this.board.pinOut.analogOutput[pinNumber];
+    var pin = this.board.pinOut.analogInput[pinNumber];
     this.code = '(function () local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
 }
+
+//// Comm
+
+LuaExpression.prototype.setMQTTBroker = function(id, url, port, user, password) {
+    this.code
+        = 'm = (function () local c = mqtt.client("' 
+        + id + '", "' + url + '", ' + port + ', false); c:connect("' 
+        + user + '","' + password + '"); return c; end)()\r';
+}
+
+LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
+    this.code = 'if (m ~= null) then m:publish("' + topic + '", "' + message + '", mqtt.QOS0) end\r';
+}
+

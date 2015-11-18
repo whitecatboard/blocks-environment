@@ -282,6 +282,19 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'input / output',
             spec: 'get analog value from pin %n',
             defaults: [6]
+        },
+        // Comm
+        setMQTTBroker: {
+            type: 'command',
+            category: 'comm',
+            spec: 'connect as %s to broker %s : %n user %s password: %s',
+            defaults: ['wc' + Math.floor(Math.random() * 100), 'isatpoint.com', 1883, '', '']
+        },
+        publishMQTTmessage: {
+            type: 'command',
+            category: 'comm',
+            spec: 'broadcast %s at topic %s',
+            defaults: ['hello network', '/test']
         }
     };
 };
@@ -521,7 +534,7 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('');//a = adc.setup(adc.ADC1, adc.AVDD, 3300);\r');
+    this.serialPort.write('a = adc.setup(adc.ADC1, adc.AVDD, 3300);\r');
 }
 
 // Coroutine handling
@@ -760,6 +773,11 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
         blocks.push(block('getPinDigital'));
         blocks.push(block('getPinAnalog'));
+
+    } else if (cat === 'comm') {
+
+        blocks.push(block('setMQTTBroker'));
+        blocks.push(block('publishMQTTmessage'));
 
     } else if (cat === 'custom blocks') {
 
