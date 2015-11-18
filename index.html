@@ -45,7 +45,7 @@ W H I T E C A T
                 <article id="about">
                     <section>
                         <h2>What is it?</h2>
-                        <p>WhiteCat is both an open hardware platform and a free blocks-based graphical programming language.</p>
+                        <p>WhiteCat is both an open hardware platform and a blocks-based graphical programming language.</p>
                         <div class="centered">
                             <img class="rounded board-prototype v-spaced" src="img/blink.gif">
                             <img class="rounded bordered v-spaced" src="img/laser-blocks.png">
@@ -67,13 +67,15 @@ W H I T E C A T
                         <p>The WhiteCat is the first PIC-based board that reimplements the whole system stack. Instead of the usual proprietary vendor-locked libraries, we have decided to stand by our principles and base our system in the standard, free -as in freedom and as in gratis- GCC libs.</p>
                         <p>Everything in the system strives to adhere to standards, which is why we include hardware and software abstractions for the CANbus, MQTT and REST protocols, allowing the board to be seamlessly integrated in any other environment and communicate with any standard-compliant device.</p>
                         <h4>You can build it yourself</h4>
-                        <p>The WhiteCat board is open hardware **** BUILD IT YOURSELF ****</p>
+                        <p>The WhiteCat board is so much open hardware that you can actually build it yourself at home! We not only provide the factory-grade schematics, but also provide plans and a detailed process description for you to etch the circuits and solder the board by yourself.</p>
+                        <p>As a single-faced board, the home-brewed version is larger than the factory made one, but it packs pretty much the same capabilities.</p>
+                        <p>Have you ever imagined being able to hand-solder a 32 bit, 200 MHz computer that you can hold in your hand and is powerful enough to even run LiteBSD 4.4?</p>
                     </section>
                     <section>
                         <h3>Why develop a whole new system?</h3>
-                        <p>there are static systems like ardublock, ....that are not enviorment but translators of blocks to text. They do not allow live code in real time, they are not dynamics and they transtalate to languages that are of very low level..features: not hetereougenous lists..</p>
-                        <p>To overcome this lack, this gap Edutec build <a href="http://s4a.cat/snap">Snap4Arduino</a>, which is based on dynamic blocks environments. But it looses the authonomy of the board.</p>
-                        <p>The WhiteCat blocks environment is conceived to address both needs: having a dynamic, real-time, high-level language and, at the same time, allowing you to build an autonomous hardware system while removing the need to compile or translate anything. With the WhiteCat system, we try to blur the lines between prototype and final product. The environment lets you build your solutions in an experimental, real-time, iterative way without the need of additional deployment processes.</p>
+                        <p>There are several static blocks systems for different hardware solutions that just translate blocks to text. While these help overcome initial barriers to learning programming, they are not live, dynamic environments and the languages they translate to are very low level and lack fundamental computationally rich features, like first class heterogeneous lists, higher order functions or an event system.</p>
+                        <p>To overcome this gap, the <a href="http://edutec.citilab.eu" target="_blank">Edutec</a> team built <a href="http://s4a.cat/snap">Snap4Arduino</a>, which is based on the <a target="_blank" href="http://snap.berkeley.edu">Snap<i>!</i></a> programming language and thus inherits all features that we believe an educational, powerful language should have, but on the other hand it lacks the possibility of making the board autonomous.</p>
+                        <p>The WhiteCat blocks environment is conceived to address both needs: having a dynamic, real-time, high-level, blocks-based visual language and, at the same time, allowing you to build an autonomous hardware system while removing the need to compile or translate anything. With the WhiteCat system, the lines between prototype and final product become blurred. The environment lets you build your solutions in an experimental, real-time, iterative way without the need of any additional deployment process.</p>
                     </section>
                 </article>
 
@@ -82,13 +84,14 @@ W H I T E C A T
                 <article id="how">
                     <section>
                         <h2>How does it work?</h2>
-                        <p></p>
+                        <p>The WhiteCat is targeted both at professionals, hobbyists and students, and is fitted for educational, industrial or domestic use indistinctly.</p>
+                        <p>To achieve such wide range of applications and user bases, it packs a versatile programming stack meant to fit all profiles.</p>
                     </section>
                     <section>
                         <h3>Blocks on top</h3>
                         <p>We believe programming should be for everyone, and not just for those who hold engineering or computer science degrees, which is why we have developed a blocks-based, dynamic environment based on a stripped-down version of <a target="_blank" href="http://snap.berkeley.edu">Snap<i>!</i></a>.</p>
-                        <p>This visual programming environment maps directly to the board, which means all processes happen in the hardware, and the board will keep its state even after unplugging it and plugging it to a different power source. As in any other dynamic blocks-based language, you can run as many scripts in parallel as you want, and click on any block to run it while other processes are going on.</p>
-                        <p>Since the language running in the board</p>
+                        <p>This visual programming environment maps directly to the board, which means all processes happen in the hardware, and the board will keep its state even after unplugging it from the computer and plugging it to a different power source. As in any other dynamic blocks-based language, you can run as many scripts in parallel as you want, and click on any block to run it while other processes are going on.</p>
+                        <p>Since the language running in the board supports computationally rich features, the WhiteCat blocks environment allows you to program in an elegant and way, making use of heterogeneous lists, dictionaries<sup><a class="nostyle" href="#notyet">[*]</a></sup>, first class blocks<sup><a class="nostyle" href="#notyet">[*]</a></sup>, and higher order functions.</p>
                     </section>
                     <section>
                         <h3>Lua at the bottom</h3>
@@ -126,6 +129,8 @@ W H I T E C A T
 
             </div> <!-- #main -->
         </div> <!-- #main-container -->
+
+        <small id="notyet"><strong>[*]</strong> <em>This system is currently in a pre-alpha development state, and some of the features described here are not yet available.</em></small>
 
         <div class="footer-container">
             <footer class="wrapper">

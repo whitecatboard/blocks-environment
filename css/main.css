@@ -71,7 +71,7 @@ body {
 }
 
 /* ===================
-ALL: S4A Theme
+ALL: WhiteCat Theme
 =================== */
 
 .footer-container {
@@ -126,7 +126,7 @@ ALL: IE Fixes
 }
 
 /* ==========================================================================
-Author's custom styles
+WhiteCat custom styles
 ========================================================================== */
 
 a {
@@ -170,6 +170,10 @@ h3 {
 
 .v-spaced {
     margin: 15px 0;
+}
+
+.nostyle {
+    text-decoration: none;
 }
 
 a:hover {
@@ -242,7 +246,6 @@ code.form > p span {
 }
 
 .footer-container {
-    margin-top: 50px;
     height: 110px;
     overflow: hidden;
     padding-top: 20px;
@@ -266,6 +269,11 @@ code.form > p span {
 
 .banner {
     margin-top: 20px;
+}
+
+#notyet {
+    display: block;
+    margin: 50px 0 2px 5px;
 }
 
 /* ==========================================================================
