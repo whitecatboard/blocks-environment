@@ -19,7 +19,6 @@
 
     BASED ON SNAP!
     ==============
-
     WhiteCat is based on a stripped-down version of Snap!, by Jens Mönig,
     and reuses its whole Morphic system, its blocks rendering engine, many
     of its widgets and, in general, several parts of its graphic user
@@ -39,6 +38,35 @@
     In the future, we may go even further and automatically minify the
     resulting code before sending it over to the board.
 
+    --
+
+    SERIAL PROTOCOL
+    ===============
+    These are the messages we can get back from the board, and their
+    interpretation:
+
+    C   → Chunk. The board is ready for the next chunk of data
+
+            When sending scripts over to the board, we need to split them
+            into manageable chunks and wait for the serial buffer to be empty
+            before sending the next one.
+
+    pb  → Popup Bubble. A piece of data that should show up in a bubble.
+
+            The format is pb:[ID]:[data], where ID is the coroutine's ID, or
+            'r' in case it's just a reporter that got clicked.
+
+    rc  → Runnning Coroutine. A coroutine has just come alive.
+
+            The format is rc:[ID]:[data], where data is optional. This
+            coroutine should be highlighted and possibly do something with
+            the data it has just received.
+
+    dc  → Dead Coroutine. A coroutine has ended.
+
+            The format is dc:[ID]:[data], where data is optional. This
+            coroutine should be un-highlighted and possibly do something with
+            the data it has just received.
 */
 
 // Global utils
@@ -212,7 +240,7 @@ LuaExpression.prototype.doIfElse = function (condition, ifTrue, ifFalse) {
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'local result = ' + body + '; print("wc:' + this.topBlock.coroutine.id + ':" .. tostring(result)); return result\r';
+    this.code = 'local result = ' + body + '; print("pb:' + this.topBlock.coroutine.id + ':" .. tostring(result)); return result\r';
 }
 
 LuaExpression.prototype.doWait = function (secs) {
@@ -369,8 +397,9 @@ LuaExpression.prototype.setMQTTBroker = function(id, url, port, user, password) 
 LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
     this.code 
         = 'm:subscribe(' + luaAutoEscape(topic) 
-        + ', mqtt.QOS0, (function(l, p) print(p) if (p == ' + luaAutoEscape(message)
-        + ') then ' + body + ' end end))\r';
+        + ', mqtt.QOS0, (function(l, p) if (p == ' + luaAutoEscape(message)
+        + ') then print("rc:' + this.topBlock.coroutine.id + ':"..p);'
+        + body + ' print("dc:' + this.topBlock.coroutine.id + ':"..p); end end))\r';
 }
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {

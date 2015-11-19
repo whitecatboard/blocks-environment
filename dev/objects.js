@@ -470,7 +470,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
     var myself = this;
 
     if (data === 'C') {
-        // We've been given permission to send the next chunk of a script
+        // We've been given permission to send the next chunk of a script (_C_hunk)
         if (this.outputData) {
             var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 255),
                 buffer = new Buffer(chunk.length + 1);
@@ -491,11 +491,11 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 this.serialPort.write(buffer);
             }
         }
-    } else if (data.slice(0,2) === 'wc') {
-        // We use a prefix to know whether this piece of data is meant for us
+    } else if (data.slice(0,2) === 'pb') {
+        // This piece of data should show up in a bubble (_P_op up _B_alloon)
         try {
-            var id = data.match(/^wc:(.*?):/, '$1')[1],
-                contents = data.match(/^wc:.*?:(.*)/, '$1')[1];
+            var id = data.match(/^pb:(.*?):/, '$1')[1],
+                contents = data.match(/^pb:.*?:(.*)/, '$1')[1];
 
             if (id === 'r') {
                 // It's a reporter block
@@ -509,6 +509,12 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 5);
         }
+    } else if (data.slice(0,2) === 'rc') {
+        // It's a coroutine that just came alive and its corresponding stack should be highlighted
+        var id = data.match(/^rc:(.*?):/, '$1')[1],
+            co = myself.findCoroutine(Number.parseInt(id));
+        // This coroutine may not exist anymore
+        if (co) { co.topBlock.addHighlight(co.topBlock.removeHighlight()) };
     } else if (data.slice(0,2) === 'dc') {
         // It's a dead coroutine and its corresponding stack should be un-highlighted
         var id = data.match(/^dc:(.*?):/, '$1')[1],
@@ -599,7 +605,9 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
         var coroutine = myself.addCoroutineForBlock(topBlock);
         myself.outputData += coroutine.body + ';\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
-            if (!topBlock.getHighlight()) { topBlock.addHighlight() };
+            if (!topBlock.getHighlight() && !topBlock.selector == 'subscribeToMQTTmessage') {
+                topBlock.addHighlight()
+            };
             coroutinesToRun.push(coroutine);
         };
     })
@@ -623,7 +631,7 @@ BoardMorph.prototype.getReporterResult = function (block) {
     this.serialPort.write(
             'r = '
             + new LuaExpression(block, this, block.selector != 'subscribeToMQTTmessage') 
-            + ';print("wc:r:"..tostring(r));r = nil;\r'
+            + ';print("pb:r:"..tostring(r));r = nil;\r'
             );
 }
 
