@@ -549,6 +549,9 @@ BoardMorph.prototype.stopAll = function() {
     this.serialPort.write('a = adc.setup(adc.ADC1, adc.AVDD, 3300);\r');
 }
 
+BoardMorph.prototype.reset = function() {
+    this.serialPort.write('os.exit()\r');
+}
 // Coroutine handling
 
 BoardMorph.prototype.addCoroutineForBlock = function(topBlock) {

@@ -1102,6 +1102,7 @@ IDE_Morph.prototype.aboutSnap = function () {
 IDE_Morph.prototype.newProject = function () {
     this.source = 'local';
     if (this.board) {
+        this.board.reset();
         this.board.destroy();
     }
     if (location.hash.substr(0, 6) !== '#lang:') {
