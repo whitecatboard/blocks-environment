@@ -30,10 +30,9 @@
 
 W H I T E C A T
                 </pre>
-                <h2 class="centered">The Internet of Things for Everybody</h2>
+                <h2>The Internet of Things for Humans</h2>
             </div>
         </div>
-
         <a href="https://github.com/bromagosa/WhiteCat"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/365986a132ccd6a44c23a9169022c0b5c890c387/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f7265645f6161303030302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_red_aa0000.png"></a>
 
         <div class="main-container">
@@ -100,23 +99,24 @@ W H I T E C A T
                     </section>
                     <section>
                         <h3>What's in the board?</h3>
-                        <p>Hardware:</p>
+                        <h4>Hardware:</h4>
                         <ul>
-                            <li>PIC32MZ2048EFM064 processor with 512 Kb of SRAM memory, and 2 Mb of flash program memory, 200 MHz/330 DMIPS</li>
+                            <li>PIC32MZ2048EFM064 processor at 200 MHz/330 DMIPS, with 512 Kb of SRAM memory and 2 Mb of flash program memory</li>
                             <li>Float Point Unit and Crypto Engine with a RNG for data encryption/decryption and authentication (AES, 3DES, SHA, MD5, and HMAC)</li>
                             <li>16 Mb flash memory for file access</li>
-                            <li>microSD slot for large file access</li>
+                            <li>MicroSD slot for large file access</li>
                             <li>10/100 Mbps Ethernet port</li>
                             <li>1 SPI port, 3 UART ports, 1 CAN bus</li>
-                            <li>Up to 16 ADC inputs, 12-bit resolutuion, 18 MSPS</li>
+                            <li>Up to 16 ADC inputs, 12-bit resolution, 18 MSPS</li>
                             <li>Up to 17 I/O ports</li>
                             <li>Up to 6 PWM ports</li>
                             <li>1 USB console port</li>
                         </ul>
-                        <p>Software:</p>
+                        <h4>Software:</h4>
                         <ul>
+                            <li>FreeRTOS micro-kernel (Real Time Operating System)</li>
                             <li>Lua 5.3.1</li>
-                            <li>Lua modules for access all the hardware's peripherals: I/O, ADC, CAN, TIMERS, PWM, SPI, UART, ...</li>
+                            <li>Lua modules for accessing all hardware peripherals: I/O, ADC, CAN, TIMERS, PWM, SPI, UART...</li>
                             <li>Lua socket module (TCP and UDP)</li>
                             <li>Lua MQTT client module</li>
                         </ul>
@@ -134,15 +134,17 @@ W H I T E C A T
                     <section>
                         <h3>Citilab - Edutec</h3>
                         <p>The <a href="http://edutec.citilab.eu">Edutec</a> team from the <a href="http://citilab.eu">Citilab</a> has a long history in modifying blocks-based languages. They have developed, among others, <a href="http://s4a.cat">S4A</a>, <a href="http://s4a.cat/snap">Snap4Arduino</a> and <a href="http://beetleblocks.com">BeetleBlocks</a>.</p>
-                        <p>Their knowledge of <a href="http://snap.berkeley.edu">Snap<i>!</i></a>'s codebase has been instrumental in building the WhiteCat blocks-based programming environment, which is based on this amazing language.</p>
+                        <p>Their knowledge of <a href="http://snap.berkeley.edu">Snap<i>!</i></a>'s codebase has been instrumental in allowing them to build the WhiteCat blocks-based programming environment, which is based on a stripped-down version of this dynamic, visual language.</p>
                     </section>
                     <section>
                         <h3>Iberoxarxa</h3>
-                        <p></p>
+                        <p>Iberoxarxa was founded in 2009 with the objective of helping organizations enhance their internal processes by means of free software solutions.</p>
+                        <p>They have been responsible for all the low-level software layers in the WhiteCat system, ranging from the adaptation of the RTOS operating system for the PIC family, up to the Lua interpreter and the implementation of its different modules and libraries.</p>
                     </section>
                     <section>
                         <h3>CSSIberica</h3>
-                        <p></p>
+                        <p>CSSIberica has been designing and manufacturing instruments for flight simulators since 2005 under the <a target="_blank" href="http://simmeters.com">Simmeters</a> brand, among other services.</p>
+                        <p>Their expertise in digital electronics and, in particular, the PIC ecosystem, has made it possible for them to design and produce the WhiteCat board and all its incremental prototypes.</p>
                     </section>
                 </article>
 
