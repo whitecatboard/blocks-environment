@@ -14,20 +14,57 @@
     GNU Affero General Public License for more details.
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    --
+
+    BASED ON SNAP!
+    ==============
+
+    WhiteCat is based on a stripped-down version of Snap!, by Jens Mönig,
+    and reuses its whole Morphic system, its blocks rendering engine, many
+    of its widgets and, in general, several parts of its graphic user
+    interface.
+
+    --
+
+    NOTE ABOUT LEGIBILITY
+    =====================
+    The generated Lua code is meant to be as small as possible while still
+    being reasonably understandable, but lots of names have been drastically
+    abbreviated, making some resulting scripts hard to follow.
+
+    The reason for this is that we want to transfer as few bytes as possible
+    over the wire in order to keep the illusion of liveness and real-time.
+
+    In the future, we may go even further and automatically minify the
+    resulting code before sending it over to the board.
+
 */
 
 // Global utils
 
 console.log = function (d) {
     process.stdout.write(d + '\n');
-}
+};
 
 function toLuaDigital(val) {
     return '((' + val + ' == true or ' + val + ' == 1) and 1 or 0)'
-}
+};
 
-function luaEscape(string) {
-    return (string.toString().replace("'","\\'")).replace('"', '\\"')
+function luaAutoEscape(aString) {
+    if (typeof aString === 'string') { 
+        return '"' + luaEscape(aString) + '"';
+    } else {
+        return 'tostring(' + aString + ')';
+    }
+};
+
+function luaEscape(aString) {
+    return (aString.toString().replace("'","\\'")).replace('"', '\\"')
+};
+
+function yieldIf(condition) {
+    return condition ? ';c.yield();' : '';
 }
 
 // Coroutines map into Lua coroutines
@@ -89,16 +126,17 @@ LuaExpression.prototype = {};
 LuaExpression.prototype.constructor = LuaExpression;
 LuaExpression.uber = Object.prototype;
 
-function LuaExpression(topBlock, board) {
-    this.init(topBlock, board)
+function LuaExpression(topBlock, board, shouldYield) {
+    this.init(topBlock, board, shouldYield)
 }
 
-LuaExpression.prototype.init = function(topBlock, board) {
-    if (topBlock === null) { return };
+LuaExpression.prototype.init = function(topBlock, board, shouldYield) {
+    if (!topBlock) { return };
 
     var args = [],
         nextBlock = topBlock.nextBlock ? topBlock.nextBlock() : null;
 
+    this.shouldYield = shouldYield;
     this.topBlock = topBlock;
     this.code = '';
     this.board = board;
@@ -111,22 +149,29 @@ LuaExpression.prototype.init = function(topBlock, board) {
             args.push(input.contents().text);
         } else if (input instanceof CSlotMorph) {
             // If it's a CSlotMorph, get its nested block
-            args.push(new LuaExpression(input.nestedBlock(), board));
+            args.push(new LuaExpression(input.nestedBlock(), board, shouldYield));
         } else if (input instanceof MultiArgMorph) {
-            // If it's a variadic input, let's recursivelly traverse its inputs
+            // If it's a variadic input, let's recursively traverse its inputs
             input.inputs().forEach(function(each) { translateInput(each) });
         } else {
             // Otherwise, it's a reporter, so we need to translate it into a LuaExpression 
-            args.push(new LuaExpression(input, board));
+            args.push(new LuaExpression(input, board, shouldYield));
         }
     }
 
     topBlock.inputs().forEach(function(each) { translateInput(each) });
 
+    if (topBlock.selector === 'subscribeToMQTTmessage') {
+        if (nextBlock) {
+            // Blocks fired by an MQTT event should never yield!
+            args.push((new LuaExpression(nextBlock, board, false)).toString());
+        }
+    } 
+
     this[topBlock.selector].apply(this, args);
 
-    if (nextBlock) {
-        this.code += (new LuaExpression(nextBlock, board)).toString();
+    if (nextBlock && topBlock.selector !== 'subscribeToMQTTmessage') {
+        this.code += (new LuaExpression(nextBlock, board, shouldYield)).toString();
     }
 }
 
@@ -147,11 +192,11 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\r' + body + '\rc.yield(); end\r';
+    this.code = 'while (true) do\r' + body + yieldIf(this.shouldYield) + 'end\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\r' + body + '\rc.yield(); end\r';
+    this.code = 'for i=1,' + times + ' do\r' + body + yieldIf(this.shouldYield) + 'end\r';
 };
 
 // Conditionals
@@ -160,8 +205,8 @@ LuaExpression.prototype.doIf = function (condition, body) {
     this.code = 'if ' + condition + ' then\r' + body + '\rend\r';
 }
 
-LuaExpression.prototype.doIfElse = function (condition, trueBody, falseBody) {
-    this.code = 'if ' + condition + ' then\r' + trueBody + '\relse\r' + falseBody + '\rend; c.yield()\r';
+LuaExpression.prototype.doIfElse = function (condition, ifTrue, ifFalse) {
+    this.code = 'if ' + condition + ' then\r' + ifTrue + '\relse\r' + ifFalse + '\rend' + yieldIf(this.shouldYield);
 }
 
 // Others
@@ -171,7 +216,13 @@ LuaExpression.prototype.doReport = function (body) {
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    this.code = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < (' + secs + ' * 100000000)) do c.yield(); end local t = nil\r';
+    if (this.shouldYield) {
+        this.code
+            = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < ('
+            + secs + ' * tmr.SEC)) do c.yield(); end local t = nil\r';
+    } else {
+        this.code = 'tmr.delay(tmr.SYS_TIMER, ' + secs + ' * tmr.SEC)'
+    }
 }
 
 
@@ -253,11 +304,7 @@ LuaExpression.prototype.reportJoinWords = function () {
     this.code = '(""';
 
     Array.prototype.slice.call(arguments).forEach(function(eachWord) {
-        if (typeof eachWord === 'string') { 
-            myself.code += '.. "' + luaEscape(eachWord) + '"';
-        } else {
-            myself.code += '.. tostring(' + eachWord + ')';
-        }
+        myself.code += '..' + luaAutoEscape(eachWord);
     });
 
     this.code += ')';
@@ -288,7 +335,7 @@ LuaExpression.prototype.reportListItem = function(index, list) {
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = this.board.pinOut.digitalOutput[pinNumber];
     // pio.OUTPUT is 0
-    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + '); c.yield()\r'
+    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ');' + yieldIf(this.shouldYield)
 }
 
 LuaExpression.prototype.getPinDigital = function(pinNumber) {
@@ -314,15 +361,21 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
 LuaExpression.prototype.setMQTTBroker = function(id, url, port, user, password) {
     this.code
         = 'm = (function () local c = mqtt.client(' 
-        + id + ', ' + url + ', ' + port + ', false); c:connect(' 
-        + user + ',' + password + '); return c; end)()\r';
+        + luaAutoEscape(id) + ', ' + luaAutoEscape(url) + ', ' + port + ', false); c:connect(' 
+        + luaAutoEscape(user) + ',' + luaAutoEscape(password) + '); return c; end)()'
+        + yieldIf(this.shouldYield);
 }
 
-LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic) {
-    this.code = 'if (m ~= null) then m:publish(' + topic + ', ' + message + ', mqtt.QOS0) end\r';
+LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
+    this.code 
+        = 'm:subscribe(' + luaAutoEscape(topic) 
+        + ', mqtt.QOS0, (function(l, p) print(p) if (p == ' + luaAutoEscape(message)
+        + ') then ' + body + ' end end))\r';
 }
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
-    this.code = 'if (m ~= null) then m:publish(' + topic + ', ' + message + ', mqtt.QOS0) end\r';
+    this.code
+        = 'if (m ~= null) then m:publish(' + luaAutoEscape(topic) 
+        + ', ' + luaAutoEscape(message) + ', mqtt.QOS0) end'
+        + yieldIf(this.shouldYield);
 }
-

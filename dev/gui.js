@@ -623,7 +623,7 @@ IDE_Morph.prototype.pressStart = function () {
 };
 
 IDE_Morph.prototype.fireGreenFlagEvent = function () {
-    this.board.buildCoroutines(this.board.allHatBlocksFor('__shout__go__'));
+    this.board.buildCoroutines(this.board.allHatBlocksFor('__shout__go__').concat(this.board.allHatBlocksFor('__postal__service__')));
 };
 
 IDE_Morph.prototype.fireStopAllEvent = function () {

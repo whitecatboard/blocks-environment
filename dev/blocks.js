@@ -1619,7 +1619,7 @@ BlockMorph.prototype.userMenu = function () {
     menu.addItem(
             'Print in Lua',
             function() {
-                exp = new LuaExpression(myself, myself.receiver());
+                exp = new LuaExpression(myself, myself.receiver(), this.selector != 'subscribeToMQTTmessage');
                 myself.showBubble(exp);
                 console.log(exp.toString());
             }
@@ -2278,7 +2278,9 @@ BlockMorph.prototype.mouseClickLeft = function () {
          * buildCoroutines() pushes it all to the board and tells it to fire the
          * coroutine that "top" holds.
          */
-        board.buildCoroutines([top]);
+        var coroutinesToRun = board.allHatBlocksFor('__postal__service__');
+        coroutinesToRun.push(top);
+        board.buildCoroutines(coroutinesToRun);
     }
 
 };

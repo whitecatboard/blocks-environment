@@ -555,7 +555,7 @@ BoardMorph.prototype.addCoroutineForBlock = function(topBlock) {
 
     coroutine = new Coroutine(id, topBlock);
     topBlock.coroutine = coroutine;
-    coroutine.setBody(new LuaExpression(topBlock, this));
+    coroutine.setBody(new LuaExpression(topBlock, this, topBlock.selector != 'subscribeToMQTTmessage'));
 
     return this.addCoroutine(coroutine);
 }
@@ -606,6 +606,8 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 
     this.outputData += new Scheduler(coroutinesToRun) + '\r';
 
+    require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
+
     // We should not stop everything, but that's how it works for now
     this.stopAll();
 
@@ -620,7 +622,7 @@ BoardMorph.prototype.getReporterResult = function (block) {
     this.reporterBlock = block;
     this.serialPort.write(
             'r = '
-            + new LuaExpression(block, this) 
+            + new LuaExpression(block, this, block.selector != 'subscribeToMQTTmessage') 
             + ';print("wc:r:"..tostring(r));r = nil;\r'
             );
 }
@@ -1159,22 +1161,14 @@ BoardMorph.prototype.allMessageNames = function () {
 };
 
 BoardMorph.prototype.allHatBlocksFor = function (message) {
-    if (typeof message === 'number') {message = message.toString(); }
     return this.scripts.children.filter(function (morph) {
         var event;
         if (morph.selector) {
-            if (morph.selector === 'receiveMessage') {
-                event = morph.inputs()[0].evaluate();
-                return event === message
-                    || (event instanceof Array
-                        && message !== '__shout__go__'
-                        && message !== '__clone__init__');
-            }
             if (morph.selector === 'receiveGo') {
                 return message === '__shout__go__';
             }
-            if (morph.selector === 'receiveOnClone') {
-                return message === '__clone__init__';
+            if (morph.selector === 'subscribeToMQTTmessage') {
+                return message === '__postal__service__';
             }
         }
         return false;
