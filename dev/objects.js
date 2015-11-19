@@ -288,7 +288,7 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'comm',
             spec: 'connect as %s to broker %s : %n user %s password: %s',
-            defaults: ['wc' + Math.floor(Math.random() * 100), 'isatpoint.com', 1883, '', '']
+            defaults: ['wc' + Math.floor(Math.random() * 100), 'cssiberica.com', 1883, '', '']
         },
         subscribeToMQTTmessage: {
             type: 'hat',
@@ -546,7 +546,7 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('a = adc.setup(adc.ADC1, adc.AVDD, 3300);\r');
+    this.serialPort.write('\r');
 }
 
 BoardMorph.prototype.reset = function() {

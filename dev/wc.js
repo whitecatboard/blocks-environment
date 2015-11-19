@@ -116,7 +116,7 @@ Coroutine.prototype.setBody = function(body) {
 }
 
 Coroutine.prototype.wrap = function(body) {
-    return 'c.create(function() ' + body + ' end);\r';
+    return 'c.create(function() print("rc:' + this.id + ':");' + body + '; c.yield(); end);\r';
 }
 
 // Scheduler handles coroutine threads
@@ -381,7 +381,7 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
     var pin = this.board.pinOut.analogInput[pinNumber];
-    this.code = '(function () local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
+    this.code = '(function () a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
 }
 
 //// Comm
