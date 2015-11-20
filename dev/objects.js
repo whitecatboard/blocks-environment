@@ -228,6 +228,12 @@ BoardMorph.prototype.initBlocks = function () {
             spec: 'join %words',
             defaults: [localize('hello') + ' ', localize('world')]
         },
+        runLua: {
+            type: 'command',
+            category: 'operators',
+            spec: 'run lua %s',
+            defaults: ['return net.stat()']
+        },
 
         // Variables
         doSetVar: {
@@ -773,6 +779,8 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('reportFalse'));
         blocks.push('-');
         blocks.push(block('reportJoinWords'));
+        blocks.push('-');
+        blocks.push(block('runLua'));
 
     } else if (cat === 'data') {
 

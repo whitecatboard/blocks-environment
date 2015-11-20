@@ -247,7 +247,7 @@ LuaExpression.prototype.doWait = function (secs) {
     if (this.shouldYield) {
         this.code
             = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < ('
-            + secs + ' * tmr.SEC)) do c.yield(); end local t = nil\r';
+            + secs + ' * 100000000)) do c.yield(); end local t = nil\r';
     } else {
         this.code = 'tmr.delay(tmr.SYS_TIMER, ' + secs + ' * tmr.SEC)'
     }
@@ -336,6 +336,10 @@ LuaExpression.prototype.reportJoinWords = function () {
     });
 
     this.code += ')';
+}
+
+LuaExpression.prototype.runLua = function(code) {
+    this.code = 'local f = (function() ' + code + ' end)(); if (f) then print("pb:' + this.topBlock.coroutine.id + ':" .. f) end;\r';
 }
 
 //// Data
