@@ -1532,6 +1532,29 @@ IDE_Morph.prototype.showMessage = function (message, secs) {
     return m;
 };
 
+IDE_Morph.prototype.showModalMessage = function (message, secs) {
+    var overlay = new TriggerMorph(),
+        myself = this,
+        m = this.showMessage(message, secs);
+
+    m.originalDestroy = m.destroy;
+    m.destroy = function() {
+        myself.overlay.destroy();
+        this.originalDestroy();
+    }
+
+    this.overlay = overlay;
+    this.add(overlay);
+
+    overlay.step = function() {
+        this.setWidth(myself.width());
+        this.setHeight(myself.height());
+        this.setPosition(myself.position());
+    }
+    
+    return m;
+};
+
 IDE_Morph.prototype.inform = function (title, message) {
     new DialogBoxMorph().inform(
         title,

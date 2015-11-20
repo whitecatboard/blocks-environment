@@ -456,7 +456,8 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
         this.serialPort.on('open', function (err) {
             if (err) { console.log(err) };
             myself.stopAll();
-            myself.ide.showMessage('Board connected at ' + port, 2);
+            myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
+            myself.connecting = true;
             myself.serialPort.on('data', function(data) {
                 myself.parseSerialResponse(data);
             });
@@ -527,6 +528,9 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             co = myself.findCoroutine(Number.parseInt(id));
         // This coroutine may not exist anymore
         if (co) { co.topBlock.removeHighlight() };
+    } else if (this.connecting && data.slice(0,3) === '/ >') {
+        this.connecting = false;
+        myself.ide.showMessage('Board ready.', 2);
     } else {
         console.log(data)
     }
