@@ -290,12 +290,6 @@ BoardMorph.prototype.initBlocks = function () {
             defaults: [6]
         },
         // Comm
-        setMQTTBroker: {
-            type: 'command',
-            category: 'comm',
-            spec: 'connect as %s to broker %s : %n user %s password: %s',
-            defaults: ['wc' + Math.floor(Math.random() * 100), 'cssiberica.com', 1883, '', '']
-        },
         subscribeToMQTTmessage: {
             type: 'hat',
             category: 'comm',
@@ -382,7 +376,16 @@ BoardMorph.prototype.init = function (ide) {
     this.idx = 0; // not to be serialized (!) - used for de-serialization
     
     this.coroutines = [];
+    this.scheduler = new Scheduler([]);
     this.reporterBlock = null;
+
+    this.broker = { 
+        url: 'whitecatboard.org',
+        port: '1883',
+        deviceID: 'WhiteCat' + Math.floor(Math.random() * 100),
+        username: '',
+        password: ''
+    };
 
     this.serialLib = require('serialport');
     this.SerialPort = this.serialLib.SerialPort;
@@ -457,7 +460,7 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             if (err) { console.log(err) };
             myself.stopAll();
             myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
-            myself.connecting = true;
+            myself.stopAllInterval = setInterval(myself.stopAll, 2000);
             myself.serialPort.on('data', function(data) {
                 myself.parseSerialResponse(data);
             });
@@ -527,9 +530,13 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         var id = data.match(/^dc:(.*?):/, '$1')[1],
             co = myself.findCoroutine(Number.parseInt(id));
         // This coroutine may not exist anymore
-        if (co) { co.topBlock.removeHighlight() };
-    } else if (this.connecting && data.slice(0,3) === '/ >') {
-        this.connecting = false;
+        if (co) {
+            co.topBlock.removeHighlight();
+            myself.scheduler.removeCoroutine(co);
+        };
+    } else if (this.stopAllInterval && data.slice(0,3) === '/ >') {
+        clearInterval(this.stopAllInterval);
+        this.stopAllInterval = null;
         myself.ide.showMessage('Board ready.', 2);
     } else {
         console.log(data)
@@ -584,16 +591,6 @@ BoardMorph.prototype.addCoroutine = function(coroutine) {
     return coroutine;
 }
 
-BoardMorph.prototype.removeCoroutine = function(coroutine) {
-    if (typeof coroutine === 'number') {
-        this.findCoroutine(coroutine).topBlock.coroutine = null;
-        this.coroutines.splice(coroutine, 1);
-    } else {
-        if (coroutine.topBlock) { coroutine.topBlock.coroutine = null };
-        this.coroutines.splice(this.coroutines.indexOf(coroutine), 1);
-    }
-}
-
 BoardMorph.prototype.clearCoroutines = function() {
     this.coroutines = [];
     this.stopAll();
@@ -604,8 +601,7 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     // Fire up the coroutines that correspond with topBlocksToRun
     // Add all that to autorun.lua so it's persistent upon reset
 
-    var myself = this,
-        coroutinesToRun = [];
+    var myself = this;
 
     this.outputData = '';
     this.outputIndex = 0;
@@ -618,16 +614,15 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
         var coroutine = myself.addCoroutineForBlock(topBlock);
         myself.outputData += coroutine.body + ';\r';
         if (topBlocksToRun.indexOf(topBlock) > -1) {
+            console.log(topBlock);
             if (!topBlock.getHighlight() && !topBlock.selector == 'subscribeToMQTTmessage') {
                 topBlock.addHighlight()
             };
-            coroutinesToRun.push(coroutine);
+            myself.scheduler.addCoroutine(coroutine);
         };
     })
 
-    this.outputData += new Scheduler(coroutinesToRun) + '\r';
-
-    require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
+    this.outputData += myself.scheduler.toString() + '\r';
 
     // We should not stop everything, but that's how it works for now
     this.stopAll();
@@ -638,14 +633,28 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 }
 
 BoardMorph.prototype.getReporterResult = function (block) {
-    // We should not stop everything, but that's how it works for now
     this.stopAll();
     this.reporterBlock = block;
     this.serialPort.write(
             'r = '
             + new LuaExpression(block, this, block.selector != 'subscribeToMQTTmessage') 
-            + ';print("pb:r:"..tostring(r));r = nil;\r'
+            + ';print("pb:r:"..tostring(r));r = nil;dofile("autorun.lua")\r'
             );
+}
+
+// MQTT
+
+BoardMorph.prototype.connectToMQTTBroker = function() {
+    if (!this.broker.url || !this.broker.port || !this.broker.deviceID) { return };
+
+    this.stopAll();
+    this.serialPort.write(this.mqttConnectionCode());
+}
+
+BoardMorph.prototype.mqttConnectionCode = function() {
+    return ('m = (function () local c = mqtt.client("' 
+            + this.broker.deviceID + '", "' + this.broker.url + '", ' + this.broker.port + ', false); c:connect("' 
+            + this.broker.username + '","' + this.broker.password + '"); return c; end)();\r');
 }
 
 // BoardMorph duplicating (fullCopy)
@@ -807,7 +816,21 @@ BoardMorph.prototype.blockTemplates = function (category) {
 
     } else if (cat === 'comm') {
 
-        blocks.push(block('setMQTTBroker'));
+        button = new PushButtonMorph(
+            null,
+            function () {
+                new MQTTDialogMorph(
+                    myself,
+                    function() { myself.connectToMQTTBroker() },
+                    myself
+                ).popUp(this.world);
+            },
+            'Connect to MQTT broker'
+        );
+        button.userMenu = helpMenu;
+        button.selector = 'connectToMQTTBroker';
+        blocks.push(button);
+        blocks.push('-');
         blocks.push(block('subscribeToMQTTmessage'));
         blocks.push(block('publishMQTTmessage'));
 

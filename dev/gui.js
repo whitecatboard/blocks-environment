@@ -629,6 +629,8 @@ IDE_Morph.prototype.fireGreenFlagEvent = function () {
 IDE_Morph.prototype.fireStopAllEvent = function () {
     this.board.stopAll();
     this.board.scripts.children.forEach(function(each){ each.removeHighlight() });
+    this.board.scheduler.init();
+    this.board.serialPort.write('cr = null\r');
 };
 
 IDE_Morph.prototype.runScripts = function () {
@@ -1129,14 +1131,17 @@ IDE_Morph.prototype.saveToDisk = function (name, plain) {
     var menu, str, myself = this;
 
     if (!name) {
-        world.prompt(
-                'Please enter a name for\nthis project', 
-                function(name){
-                    myself.saveToDisk(name)
-                },
+        new DialogBoxMorph(
                 this,
-                'Untitled'
-                );
+                function(name) {
+                    myself.saveToDisk(name);
+                },
+                this
+            ).prompt(
+                'Please enter a name for\nthis project', 
+                this.projectName || 'Untitled',
+                this.world()
+            );
         return;
     } else {
         this.setProjectName(name);

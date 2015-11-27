@@ -196,8 +196,6 @@ SnapSerializer.uber = XML_Serializer.prototype;
 
 SnapSerializer.prototype.app = 'WhiteCat 0.1b';
 
-SnapSerializer.prototype.thumbnailSize = new Point(160, 120);
-
 /*
 SnapSerializer.prototype.watcherLabels = {
     xPosition: 'x position',
@@ -377,6 +375,17 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode, ide) {
     model.board = model.project.require('board');
     project.board = ide.board;
 
+    try {
+        model.board.broker = model.board.require('broker');
+        project.board.broker.url = model.board.broker.attributes.url;
+        project.board.broker.port = model.board.broker.attributes.port;
+        project.board.broker.deviceID = model.board.broker.attributes.deviceID;
+        project.board.broker.username = model.board.broker.attributes.username;
+        project.board.broker.password = model.board.broker.attributes.password;
+    } catch (err) {
+        console.log(err);
+        console.log('probably an old project, please resave!'); 
+    }
     this.loadObject(project.board, model.board);
 
     this.objects = {};
@@ -838,7 +847,6 @@ SnapSerializer.prototype.loadValue = function (model) {
 };
 
 SnapSerializer.prototype.openProject = function (project, ide) {
-    var board;
     if (!project) {
         return;
     }
@@ -876,11 +884,17 @@ BoardMorph.prototype.toXML = function (serializer) {
     var ide = this.parentThatIsA(IDE_Morph);
     return serializer.format(
         '<project name="@"><board>' +
+            '<broker url="@" port="@" deviceID="@" username="@" password="@"></broker>' +
             '<variables>%</variables>' +
             '<blocks>%</blocks>' +
             '<scripts>%</scripts>' +
             '</board></project>',
         this.parentThatIsA(IDE_Morph).projectName,
+        this.broker.url,
+        this.broker.port,
+        this.broker.deviceID,
+        this.broker.username,
+        this.broker.password,
         serializer.store(this.variables),
         !this.customBlocks ?
                     '' : serializer.store(this.customBlocks),

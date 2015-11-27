@@ -2278,9 +2278,9 @@ BlockMorph.prototype.mouseClickLeft = function () {
          * buildCoroutines() pushes it all to the board and tells it to fire the
          * coroutine that "top" holds.
          */
-        var coroutinesToRun = board.allHatBlocksFor('__postal__service__');
-        coroutinesToRun.push(top);
-        board.buildCoroutines(coroutinesToRun);
+        var blocksToRun = board.allHatBlocksFor('__postal__service__');
+        blocksToRun.push(top);
+        board.buildCoroutines(blocksToRun);
     }
 
 };

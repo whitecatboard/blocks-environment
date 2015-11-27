@@ -108,6 +108,7 @@ function Coroutine(id, topBlock) {
 
 Coroutine.prototype.init = function(id, topBlock) {
     this.id = id;
+    this.wasRunning = false;
     this.topBlock = topBlock;
 }
 
@@ -119,6 +120,10 @@ Coroutine.prototype.wrap = function(body) {
     return 'c.create(function() print("rc:' + this.id + ':");' + body + '; c.yield(); end);\r';
 }
 
+Coroutine.prototype.setRunning = function(running) {
+    this.wasRunning = running == true;
+}
+
 // Scheduler handles coroutine threads
 var Scheduler;
 
@@ -126,21 +131,41 @@ Scheduler.prototype = {};
 Scheduler.prototype.constructor = Scheduler;
 Scheduler.uber = Object.prototype;
 
-function Scheduler(coroutines) {
-    this.init(coroutines);
+function Scheduler() {
+    this.init();
 }
 
-Scheduler.prototype.init = function(coroutines) {
+Scheduler.prototype.init = function() {
     var myself = this;
 
-    this.coroutines = coroutines;
-    this.header = 'cr={};cn=0;';
-
-    this.coroutines.forEach(function(coroutine) {
-        myself.header += 'cr[' + coroutine.id + ']=c' + coroutine.id + ';cn=cn+1;';
-    });
+    this.coroutines = [];
+    this.rewriteHeader();
 
     this.body = 'while (cn>0) do\rfor k,v in pairs(cr) do if (c.status(v)~="dead") then\rc.resume(v) else\rprint("dc:"..k..":");cn=cn-1;end;end;end;';
+}
+
+Scheduler.prototype.rewriteHeader = function() {
+    this.header = 'if (cr == null) then cr={};cn=0; end;';
+    this.coroutines.forEach(function(coroutine) {
+        myself.addCoroutine(coroutine);
+    });
+}
+
+Scheduler.prototype.addCoroutine = function(coroutine) {
+    if (!this.hasCoroutine(coroutine)) {
+        this.header += 'cr[' + coroutine.id + ']=c' + coroutine.id + ';cn=cn+1;';
+    }
+}
+
+Scheduler.prototype.removeCoroutine = function(coroutine) {
+    if (this.hasCoroutine(coroutine)) {
+        this.coroutines.splice(this.coroutines(indexOf(coroutine)), 1);
+        this.rewriteHeader();
+    }
+}
+
+Scheduler.prototype.hasCoroutine = function(coroutine) {
+    return detect(this.coroutines, function(each) { return each.id == coroutine.id });
 }
 
 Scheduler.prototype.toString = function() {
@@ -390,17 +415,9 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
 
 //// Comm
 
-LuaExpression.prototype.setMQTTBroker = function(id, url, port, user, password) {
-    this.code
-        = 'm = (function () local c = mqtt.client(' 
-        + luaAutoEscape(id) + ', ' + luaAutoEscape(url) + ', ' + port + ', false); c:connect(' 
-        + luaAutoEscape(user) + ',' + luaAutoEscape(password) + '); return c; end)()'
-        + yieldIf(this.shouldYield);
-}
-
 LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
     this.code 
-        = 'm:subscribe(' + luaAutoEscape(topic) 
+        = 'if (m == nil) then ' + this.board.mqttConnectionCode() + ' c.yield() end m:subscribe(' + luaAutoEscape(topic) 
         + ', mqtt.QOS0, (function(l, p) if (p == ' + luaAutoEscape(message)
         + ') then print("rc:' + this.topBlock.coroutine.id + ':"..p);'
         + body + ' print("dc:' + this.topBlock.coroutine.id + ':"..p); end end))\r';
@@ -408,7 +425,110 @@ LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) 
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
     this.code
-        = 'if (m ~= null) then m:publish(' + luaAutoEscape(topic) 
-        + ', ' + luaAutoEscape(message) + ', mqtt.QOS0) end'
+        = 'if (m == nil) do ' + this.board.mqttConnectionCode() + ' end m:publish(' + luaAutoEscape(topic) 
+        + ', ' + luaAutoEscape(message) + ', mqtt.QOS0)'
         + yieldIf(this.shouldYield);
+}
+
+
+// Dialog that lets us connect to an MQTT broker
+
+var MQTTDialogMorph;
+
+MQTTDialogMorph.prototype = new DialogBoxMorph();
+MQTTDialogMorph.prototype.constructor = MQTTDialogMorph;
+MQTTDialogMorph.uber = DialogBoxMorph.prototype;
+
+function MQTTDialogMorph(target, action, environment) {
+    this.init(target, action, environment);
+}
+
+MQTTDialogMorph.prototype.init = function (target, action, environment) {
+    // initialize inherited properties:
+    MQTTDialogMorph.uber.init.call(
+        this,
+        target,
+        action,
+        environment
+    );
+
+    this.labelString = 'Connect to MQTT broker';
+    this.createLabel();
+
+    this.addBody(new AlignmentMorph('column', 4));
+    this.body.alignment = 'left';
+
+    this.urlRow = new AlignmentMorph('row', this.padding);
+    this.portRow = new AlignmentMorph('row', this.padding);
+    this.idRow = new AlignmentMorph('row', this.padding);
+    this.usernameRow = new AlignmentMorph('row', this.padding);
+    this.passwordRow = new AlignmentMorph('row', this.padding);
+
+    this.createUrlRow();
+    this.createPortRow();
+    this.createIdRow();
+    this.createUsernameRow();
+    this.createPasswordRow();
+
+    this.body.add(this.urlRow);
+    this.body.add(this.portRow);
+    this.body.add(this.idRow);
+    this.body.add(this.usernameRow);
+    this.body.add(this.passwordRow);
+
+    this.body.drawNew();
+    this.body.fixLayout();
+
+    this.addButton('ok', 'Ok');
+    this.addButton('cancel', 'Cancel');
+
+    this.fixLayout();
+    this.drawNew();
+};
+
+MQTTDialogMorph.prototype.createUrlRow = function() {
+    this.urlField = new InputFieldMorph(this.target.broker.url || 'whitecatboard.org');
+    this.urlRow.add(new TextMorph('Broker url:'));
+    this.urlRow.add(this.urlField);
+    this.urlRow.fixLayout();
+}
+
+MQTTDialogMorph.prototype.createPortRow = function() {
+    this.portRow.add(new TextMorph('Port:'));
+    this.portField = new InputFieldMorph(this.target.broker.port || '1883');
+    this.portRow.add(this.portField);
+    this.portRow.fixLayout();
+}
+
+MQTTDialogMorph.prototype.createIdRow = function() {
+    this.idField = new InputFieldMorph(this.target.broker.deviceID || ('WhiteCat' + Math.floor(Math.random() * 100)));
+    this.idRow.add(new TextMorph('Board ID:'));
+    this.idRow.add(this.idField);
+    this.idRow.fixLayout();
+}
+
+MQTTDialogMorph.prototype.createUsernameRow = function() {
+    this.usernameField = new InputFieldMorph(this.target.broker.username || '');
+    this.usernameRow.add(new TextMorph('username:'));
+    this.usernameRow.add(this.usernameField);
+    this.usernameRow.fixLayout();
+}
+
+MQTTDialogMorph.prototype.createPasswordRow = function() {
+    this.passwordField = new InputFieldMorph(this.target.broker.password || '');
+    this.passwordField.contents().text.toggleIsPassword(); 
+    this.passwordRow.add(new TextMorph('Password:'));
+    this.passwordRow.add(this.passwordField);
+    this.passwordRow.fixLayout();
+}
+
+MQTTDialogMorph.prototype.ok = function() {
+    this.target.broker = {
+        url: this.urlField.getValue(),
+        port: this.portField.getValue(),
+        deviceID: this.idField.getValue(),
+        username: this.usernameField.getValue(),
+        password: this.passwordField.getValue()
+    };
+    this.accept();
 }

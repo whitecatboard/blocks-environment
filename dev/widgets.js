@@ -2973,7 +2973,7 @@ InputFieldMorph.prototype.init = function (
     this.isNumeric = isNumeric || false;
 
     InputFieldMorph.uber.init.call(this);
-    this.color = new Color(255, 255, 230);
+    this.color = new Color(255, 255, 255);
     this.add(contents);
     this.add(arrow);
     contents.isDraggable = false;
@@ -3182,7 +3182,7 @@ InputFieldMorph.prototype.drawNew = function () {
         } else {
             this.color = this.parent.color.lighter(this.contrast * 0.75);
         }
-        borderColor = this.parent.color;
+        borderColor = new Color(120, 120, 120);
     } else {
         borderColor = new Color(120, 120, 120);
     }
@@ -3205,80 +3205,14 @@ InputFieldMorph.prototype.drawNew = function () {
 };
 
 InputFieldMorph.prototype.drawRectBorder = function (context) {
-    var shift = this.edge * 0.5,
-        gradient;
-
-    if (MorphicPreferences.isFlat && !this.is3D) {return; }
-
     context.lineWidth = this.edge;
-    context.lineJoin = 'round';
-    context.lineCap = 'round';
-
-    context.shadowOffsetY = shift;
-    context.shadowBlur = this.edge * 4;
-    context.shadowColor = this.cachedClrDark;
-
-    gradient = context.createLinearGradient(
-        0,
-        0,
-        0,
-        this.edge
-    );
-
-    gradient.addColorStop(0, this.cachedClr);
-    gradient.addColorStop(1, this.cachedClrDark);
-    context.strokeStyle = gradient;
+    context.strokeStyle = this.color.darker(20);
     context.beginPath();
-    context.moveTo(this.edge, shift);
-    context.lineTo(this.width() - this.edge - shift, shift);
-    context.stroke();
-
-    context.shadowOffsetY = 0;
-
-    gradient = context.createLinearGradient(
-        0,
-        0,
-        this.edge,
-        0
-    );
-    gradient.addColorStop(0, this.cachedClr);
-    gradient.addColorStop(1, this.cachedClrDark);
-    context.strokeStyle = gradient;
-    context.beginPath();
-    context.moveTo(shift, this.edge);
-    context.lineTo(shift, this.height() - this.edge - shift);
-    context.stroke();
-
-    context.shadowOffsetX = 0;
-    context.shadowOffsetY = 0;
-    context.shadowBlur = 0;
-
-    gradient = context.createLinearGradient(
-        0,
-        this.height() - this.edge,
-        0,
-        this.height()
-    );
-    gradient.addColorStop(0, this.cachedClrBright);
-    gradient.addColorStop(1, this.cachedClr);
-    context.strokeStyle = gradient;
-    context.beginPath();
-    context.moveTo(this.edge, this.height() - shift);
-    context.lineTo(this.width() - this.edge, this.height() - shift);
-    context.stroke();
-
-    gradient = context.createLinearGradient(
-        this.width() - this.edge,
-        0,
-        this.width(),
-        0
-    );
-    gradient.addColorStop(0, this.cachedClrBright);
-    gradient.addColorStop(1, this.cachedClr);
-    context.strokeStyle = gradient;
-    context.beginPath();
-    context.moveTo(this.width() - shift, this.edge);
-    context.lineTo(this.width() - shift, this.height() - this.edge);
+    context.moveTo(0, 0);
+    context.lineTo(this.width(), 0);
+    context.lineTo(this.width(), this.height());
+    context.lineTo(0, this.height());
+    context.lineTo(0, 0);
     context.stroke();
 };
 
