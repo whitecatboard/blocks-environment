@@ -424,8 +424,8 @@ SyntaxElementMorph.prototype.getVarNamesDict = function () {
         }
     });
     if (rcvr) {
-        dict = rcvr.variables.allNamesDict();
-        tempVars.forEach(function (name) {
+        dict = {};
+        tempVars.concat(Object.keys(rcvr.variables)).forEach(function (name) {
             dict[name] = name;
         });
         return dict;
@@ -2252,6 +2252,7 @@ BlockMorph.prototype.fullCopy = function () {
 
     });
     ans.cachedInputs = null;
+    ans.thread = null;
     return ans;
 };
 
@@ -2274,13 +2275,13 @@ BlockMorph.prototype.mouseClickLeft = function () {
     }
     if (board) {
         /* We take ALL scripts in the scripting area and translate them into Lua.
-         * Each script maps to a coroutine.
-         * buildCoroutines() pushes it all to the board and tells it to fire the
-         * coroutine that "top" holds.
+         * Each script maps to a thread.
+         * buildThreads() pushes it all to the board and tells it to fire the
+         * thread that "top" holds.
          */
         var blocksToRun = board.allHatBlocksFor('__postal__service__');
         blocksToRun.push(top);
-        board.buildCoroutines(blocksToRun);
+        board.buildThreads(blocksToRun);
     }
 
 };
@@ -4319,6 +4320,26 @@ ScriptsMorph.prototype.closestBlock = function (comment, hand) {
     );
 };
 
+// ScriptsMorph watchers
+
+ScriptsMorph.prototype.watchers = function (leftPos) {
+/*
+    answer an array of all currently visible watchers.
+    If leftPos is specified, filter the list for all
+    shown or hidden watchers whose left side equals
+    the given border (for automatic positioning)
+*/
+    return this.children.filter(function (morph) {
+        if (morph instanceof WatcherMorph) {
+            if (leftPos) {
+                return morph.left() === leftPos;
+            }
+            return morph.isVisible;
+        }
+        return false;
+    });
+};
+
 // ScriptsMorph user menu
 
 ScriptsMorph.prototype.userMenu = function () {
@@ -4510,7 +4531,8 @@ ScriptsMorph.prototype.fixMultiArgs = function () {
 ScriptsMorph.prototype.wantsDropOf = function (aMorph) {
     // override the inherited method
     return aMorph instanceof SyntaxElementMorph ||
-        aMorph instanceof CommentMorph;
+        aMorph instanceof CommentMorph ||
+        aMorph instanceof WatcherMorph;
 };
 
 ScriptsMorph.prototype.reactToDropOf = function (droppedMorph, hand) {

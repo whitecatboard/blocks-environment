@@ -364,9 +364,10 @@ IDE_Morph.prototype.createControlBar = function () {
 };
 
 IDE_Morph.prototype.createBoard = function () {
-    if (this.board) { this.board.destroy() };
-    this.board = new BoardMorph(this);
-    this.add(this.board);
+    if (!this.board) { 
+        this.board = new BoardMorph(this);
+        this.add(this.board)
+    };
     this.board.hide();
 }
 
@@ -623,14 +624,16 @@ IDE_Morph.prototype.pressStart = function () {
 };
 
 IDE_Morph.prototype.fireGreenFlagEvent = function () {
-    this.board.buildCoroutines(this.board.allHatBlocksFor('__shout__go__').concat(this.board.allHatBlocksFor('__postal__service__')));
+    this.board.buildThreads(this.board.allHatBlocksFor('__shout__go__').concat(this.board.allHatBlocksFor('__postal__service__')));
 };
 
 IDE_Morph.prototype.fireStopAllEvent = function () {
     this.board.stopAll();
-    this.board.scripts.children.forEach(function(each){ each.removeHighlight() });
-    this.board.scheduler.init();
-    this.board.serialPort.write('cr = null\r');
+    this.board.scripts.children.forEach(function(each) {
+        if (!each instanceof WatcherMorph) { 
+            each.removeHighlight();
+        }
+    });
 };
 
 IDE_Morph.prototype.runScripts = function () {

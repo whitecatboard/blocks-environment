@@ -248,11 +248,6 @@ BoardMorph.prototype.initBlocks = function () {
             spec: 'change %var by %n',
             defaults: [null, 1]
         },
-        doDeclareVariables: {
-            type: 'command',
-            category: 'data',
-            spec: 'script variables %scriptVars'
-        },
         // Tables
         reportNewList: {
             type: 'reporter',
@@ -371,12 +366,13 @@ BoardMorph.prototype.init = function (ide) {
     this.customBlocks = [];
     this.version = Date.now(); // for observer optimization
 
+    this.variables = {};
+
     this.blocksCache = {}; // not to be serialized (!)
     this.paletteCache = {}; // not to be serialized (!)
     this.idx = 0; // not to be serialized (!) - used for de-serialization
     
-    this.coroutines = [];
-    this.scheduler = new Scheduler([]);
+    this.threads = [];
     this.reporterBlock = null;
 
     this.broker = { 
@@ -395,8 +391,8 @@ BoardMorph.prototype.init = function (ide) {
     BoardMorph.uber.init.call(this);
 };
 
-BoardMorph.prototype.findCoroutine = function(id) {
-    return detect(this.coroutines, function(coroutine) { return coroutine.id === id });
+BoardMorph.prototype.findThread = function(id) {
+    return detect(this.threads, function(thread) { return thread.id === id });
 }
 
 BoardMorph.prototype.discoverPorts = function(callback) {
@@ -460,7 +456,7 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             if (err) { console.log(err) };
             myself.stopAll();
             myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
-            myself.stopAllInterval = setInterval(myself.stopAll, 2000);
+            myself.stopAllInterval = setInterval(function() { myself.stopAll() }, 2000);
             myself.serialPort.on('data', function(data) {
                 myself.parseSerialResponse(data);
             });
@@ -513,33 +509,33 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 myself.reporterBlock.removeHighlight();
             }  else {
                 // It's a report command block
-                myself.findCoroutine(Number.parseInt(id)).topBlock.showBubble(contents);
+                myself.findThread(Number.parseInt(id)).topBlock.showBubble(contents);
             }
 
         } catch (err) {
             myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 5);
         }
-    } else if (data.slice(0,2) === 'rc') {
-        // It's a coroutine that just came alive and its corresponding stack should be highlighted
-        var id = data.match(/^rc:(.*?):/, '$1')[1],
-            co = myself.findCoroutine(Number.parseInt(id));
-        // This coroutine may not exist anymore
-        if (co) { co.topBlock.addHighlight(co.topBlock.removeHighlight()) };
-    } else if (data.slice(0,2) === 'dc') {
-        // It's a dead coroutine and its corresponding stack should be un-highlighted
-        var id = data.match(/^dc:(.*?):/, '$1')[1],
-            co = myself.findCoroutine(Number.parseInt(id));
-        // This coroutine may not exist anymore
-        if (co) {
-            co.topBlock.removeHighlight();
-            myself.scheduler.removeCoroutine(co);
+    } else if (data.slice(0,2) === 'rt') {
+        // It's a thread that just came alive and its corresponding stack should be highlighted
+        var id = data.match(/^rt:(.*?):/, '$1')[1],
+            thread = myself.findThread(Number.parseInt(id));
+        // This thread may not exist anymore
+        if (thread) { thread.topBlock.addHighlight(thread.topBlock.removeHighlight()) };
+    } else if (data.slice(0,2) === 'dt') {
+        // It's a dead thread and its corresponding stack should be un-highlighted
+        var id = data.match(/^dt:(.*?):/, '$1')[1],
+            thread = myself.findThread(Number.parseInt(id));
+        // This thread may not exist anymore
+        if (thread) {
+            thread.topBlock.removeHighlight();
         };
-    } else if (this.stopAllInterval && data.slice(0,3) === '/ >') {
+    } else if (this.stopAllInterval && data.slice(data.length - 3, data.length - 2) === '>') {
         clearInterval(this.stopAllInterval);
         this.stopAllInterval = null;
+        this.reset();
         myself.ide.showMessage('Board ready.', 2);
     } else {
-        console.log(data)
+        console.log(data);
     }
 };
 
@@ -563,42 +559,50 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('\r');
+    var output = '\r';
+    this.threads.forEach(function(eachThread) {
+        output += 'thread.remove(t' + eachThread.id + ');'
+    });
+    this.serialPort.write(output);
 }
 
 BoardMorph.prototype.reset = function() {
     this.serialPort.write('os.exit()\r');
 }
-// Coroutine handling
+// Thread handling
 
-BoardMorph.prototype.addCoroutineForBlock = function(topBlock) {
-    var coroutine, 
+BoardMorph.prototype.addThreadForBlock = function(topBlock) {
+    var thread, 
         id = 0;
 
-    if (this.coroutines.length > 0) {
-        id = this.coroutines[this.coroutines.length - 1].id + 1;
+    if (topBlock.thread) {
+        topBlock.thread.setBody(new LuaExpression(topBlock, this));
+        return topBlock.thread;
+    }
+    
+    if (this.threads.length > 0) {
+        id = this.threads[this.threads.length - 1].id + 1;
     }
 
-    coroutine = new Coroutine(id, topBlock);
-    topBlock.coroutine = coroutine;
-    coroutine.setBody(new LuaExpression(topBlock, this, topBlock.selector != 'subscribeToMQTTmessage'));
+    thread = new Thread(id, topBlock);
+    topBlock.thread = thread;
+    thread.setBody(new LuaExpression(topBlock, this));
 
-    return this.addCoroutine(coroutine);
+    return this.addThread(thread);
 }
 
-BoardMorph.prototype.addCoroutine = function(coroutine) {
-    this.coroutines.push(coroutine);
-    return coroutine;
+BoardMorph.prototype.addThread = function(thread) {
+    this.threads.push(thread);
+    return thread;
 }
 
-BoardMorph.prototype.clearCoroutines = function() {
-    this.coroutines = [];
-    this.stopAll();
+BoardMorph.prototype.clearThreads = function() {
+    this.threads = [];
 }
 
-BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
-    // Build all coroutines based on the block stacks on the scripts canvas
-    // Fire up the coroutines that correspond with topBlocksToRun
+BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
+    // Build all threads based on the block stacks on the scripts canvas
+    // Fire up the threads that correspond with topBlocksToRun
     // Add all that to autorun.lua so it's persistent upon reset
 
     var myself = this;
@@ -606,26 +610,31 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
     this.outputData = '';
     this.outputIndex = 0;
 
-    this.clearCoroutines();
+    this.clearThreads();
+    this.stopAll();
 
     this.scripts.children.forEach(function(topBlock) {
-        if (topBlock instanceof ReporterBlockMorph) { return };
 
-        var coroutine = myself.addCoroutineForBlock(topBlock);
-        myself.outputData += coroutine.body + ';\r';
+        if (topBlock instanceof ReporterBlockMorph 
+                || topBlock instanceof WatcherMorph) { 
+            return 
+        };
+
+        // If the thread is already there, we'll update it
+        var thread = myself.addThreadForBlock(topBlock);
+        
+        myself.outputData += thread.body;
         if (topBlocksToRun.indexOf(topBlock) > -1) {
-            console.log(topBlock);
+            myself.outputData += 'thread.add(t' + thread.id + ')\r';
             if (!topBlock.getHighlight() && !topBlock.selector == 'subscribeToMQTTmessage') {
                 topBlock.addHighlight()
             };
-            myself.scheduler.addCoroutine(coroutine);
         };
     })
 
-    this.outputData += myself.scheduler.toString() + '\r';
+    this.outputData += 'thread.run()\r';
 
-    // We should not stop everything, but that's how it works for now
-    this.stopAll();
+    require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
 
     // We start writing
     // BoardMorph.prototype.parseSerialResponse takes over
@@ -633,14 +642,96 @@ BoardMorph.prototype.buildCoroutines = function(topBlocksToRun) {
 }
 
 BoardMorph.prototype.getReporterResult = function (block) {
-    this.stopAll();
     this.reporterBlock = block;
-    this.serialPort.write(
-            'r = '
-            + new LuaExpression(block, this, block.selector != 'subscribeToMQTTmessage') 
-            + ';print("pb:r:"..tostring(r));r = nil;dofile("autorun.lua")\r'
-            );
+    this.serialPort.write('print("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r');
 }
+
+// Variables
+BoardMorph.prototype.addVariable = function(name) {
+    this.variables[name] = 0;
+}
+
+BoardMorph.prototype.deleteVariable = function(name) {
+    delete this.variables[name];
+    this.deleteVariableWatcher(name);
+    this.variableBlock('name').destroy();
+    ide = this.parentThatIsA(IDE_Morph);
+    ide.flushBlocksCache('data'); // b/c of inheritance
+    ide.refreshPalette();
+}
+
+BoardMorph.prototype.findVariableWatcher = function (varName) {
+    var myself = this;
+    return detect(
+        myself.scripts.children,
+        function (morph) {
+            return morph instanceof WatcherMorph
+                    && (morph.board === myself)
+                    && morph.getter === varName;
+        }
+    );
+};
+
+BoardMorph.prototype.toggleVariableWatcher = function (varName) {
+    var watcher,
+        others;
+
+    watcher = this.findVariableWatcher(varName);
+
+    if (watcher !== null) {
+        if (watcher.isVisible) {
+            watcher.hide();
+        } else {
+            watcher.show();
+            watcher.fixLayout(); // re-hide hidden parts
+            watcher.keepWithin(this.scripts);
+        }
+        return;
+    }
+
+    // if no watcher exists, create a new one
+    watcher = new WatcherMorph(
+        varName, // label
+        this.blockColor.data, // color
+        this, // board
+        varName // getter
+    );
+    watcher.setPosition(this.scripts.position().add(10));
+    others = this.scripts.watchers(watcher.left());
+    if (others.length > 0) {
+        watcher.setTop(others[others.length - 1].bottom());
+    }
+    this.scripts.add(watcher);
+    watcher.fixLayout();
+    watcher.keepWithin(this.scripts);
+};
+
+BoardMorph.prototype.showingVariableWatcher = function (varName) {
+    var watcher;
+    watcher = this.findVariableWatcher(varName);
+    if (watcher) {
+        return watcher.isVisible;
+    }
+    return false;
+};
+
+BoardMorph.prototype.deleteVariableWatcher = function (varName) {
+    var watcher;
+    watcher = this.findVariableWatcher(varName);
+    if (watcher !== null) {
+        watcher.destroy();
+    }
+};
+
+BoardMorph.prototype.variableBlock = function (varName) {
+    var block = new ReporterBlockMorph(false);
+    block.selector = 'reportGetVar';
+    block.color = this.blockColor.data;
+    block.category = 'data';
+    block.setSpec(varName);
+    block.isDraggable = true;
+    return block;
+};
 
 // MQTT
 
@@ -656,30 +747,6 @@ BoardMorph.prototype.mqttConnectionCode = function() {
             + this.broker.deviceID + '", "' + this.broker.url + '", ' + this.broker.port + ', false); c:connect("' 
             + this.broker.username + '","' + this.broker.password + '"); return c; end)();\r');
 }
-
-// BoardMorph duplicating (fullCopy)
-
-BoardMorph.prototype.fullCopy = function () {
-    alert('BoardMorph.prototype.fullCopy');
-    var c = BoardMorph.uber.fullCopy.call(this),
-        myself = this,
-        cb;
-
-    c.blocksCache = {};
-    c.paletteCache = {};
-    c.scripts = this.scripts.fullCopy();
-    c.scripts.owner = c;
-    c.customBlocks = [];
-    this.customBlocks.forEach(function (def) {
-        cb = def.copyAndBindTo(c);
-        c.customBlocks.push(cb);
-        c.allBlockInstances(def).forEach(function (block) {
-            block.definition = cb;
-        });
-    });
-
-    return c;
-};
 
 // BoardMorph versioning
 
@@ -736,10 +803,49 @@ BoardMorph.prototype.blockTemplates = function (category) {
         return newBlock;
     }
 
+    function variableBlock(varName) {
+        var newBlock = BoardMorph.prototype.variableBlock(varName);
+        newBlock.isDraggable = false;
+        newBlock.isTemplate = true;
+        return newBlock;
+    }
+
     function helpMenu() {
         var menu = new MenuMorph(this);
         menu.addItem('help...', 'showHelp');
         return menu;
+    }
+
+    function addVar(name) {
+        var ide;
+        if (name) {
+            if (contains(Object.keys(myself.variables), name)) {
+                myself.inform('that name is already in use');
+            } else {
+                ide = myself.parentThatIsA(IDE_Morph);
+                myself.addVariable(name);
+                if (!myself.showingVariableWatcher(name)) {
+                    myself.toggleVariableWatcher(name);
+                }
+                ide.flushBlocksCache('data'); // b/c of inheritance
+                ide.refreshPalette();
+            }
+        }
+    }
+
+    function variableWatcherToggle(varName) {
+        return new ToggleMorph(
+            'checkbox',
+            this,
+            function () {
+                myself.toggleVariableWatcher(varName);
+            },
+            null,
+            function () {
+                return myself.showingVariableWatcher(varName);
+            },
+            null
+        );
     }
 
     if (cat === 'control') {
@@ -797,9 +903,57 @@ BoardMorph.prototype.blockTemplates = function (category) {
 
     } else if (cat === 'data') {
 
+        button = new PushButtonMorph(
+            null,
+            function () {
+                new VariableDialogMorph(
+                    null,
+                    addVar,
+                    myself
+                ).prompt(
+                    'Variable name',
+                    null,
+                    myself.world()
+                );
+            },
+            'Make a variable'
+        );
+        button.selector = 'addVariable';
+        blocks.push(button);
+
+        if (Object.keys(this.variables).length > 0) {
+            button = new PushButtonMorph(
+                null,
+                function () {
+                    var menu = new MenuMorph(
+                        myself.deleteVariable,
+                        null,
+                        myself
+                    );
+                    Object.keys(myself.variables).forEach(function (name) {
+                        menu.addItem(name, name);
+                    });
+                    menu.popUpAtHand(myself.world());
+                },
+                'Delete a variable'
+            );
+            button.selector = 'deleteVariable';
+            blocks.push(button);
+        }
+
+        blocks.push('-');
+
+        varNames = Object.keys(this.variables);
+        if (varNames.length > 0) {
+            varNames.forEach(function (name) {
+                blocks.push(variableWatcherToggle(name));
+                blocks.push(variableBlock(name));
+            });
+            blocks.push('-');
+        }
+
         blocks.push(block('doSetVar'));
         blocks.push(block('doChangeVar'));
-        blocks.push(block('doDeclareVariables'));
 
         blocks.push('=');
 
@@ -1568,4 +1722,451 @@ BoardBubbleMorph.prototype.fixLayout = function () {
         )
     ));
     this.changed();
+};
+
+// CellMorph //////////////////////////////////////////////////////////
+
+/*
+    I am a spreadsheet style cell that can display either a string,
+    a Morph, a Canvas or a toString() representation of anything else.
+    I can be used in variable watchers or list view element cells.
+*/
+
+// CellMorph inherits from BoxMorph:
+
+CellMorph.prototype = new BoxMorph();
+CellMorph.prototype.constructor = CellMorph;
+CellMorph.uber = BoxMorph.prototype;
+
+// CellMorph instance creation:
+
+function CellMorph(contents, color, idx, parentCell) {
+    this.init(contents, color, idx, parentCell);
+}
+
+CellMorph.prototype.init = function (contents, color, idx, parentCell) {
+    this.contents = (contents === 0 ? 0
+            : contents === false ? false
+                    : contents || '');
+    this.isEditable = isNil(idx) ? false : true;
+    this.idx = idx || null; // for list watchers
+    this.parentCell = parentCell || null; // for list circularity detection
+    CellMorph.uber.init.call(
+        this,
+        SyntaxElementMorph.prototype.corner,
+        1.000001, // shadow bug in Chrome,
+        new Color(255, 255, 255)
+    );
+    this.color = color || new Color(255, 140, 0);
+    this.drawNew();
+};
+
+// CellMorph circularity testing:
+
+CellMorph.prototype.isCircular = function (list) {
+    if (!this.parentCell) {return false; }
+    if (list instanceof List) {
+        return this.contents === list || this.parentCell.isCircular(list);
+    }
+    return this.parentCell.isCircular(this.contents);
+};
+
+// CellMorph layout:
+
+CellMorph.prototype.fixLayout = function () {
+    var listwatcher;
+    this.changed();
+    this.drawNew();
+    this.changed();
+    if (this.parent && this.parent.fixLayout) { // variable watcher
+        this.parent.fixLayout();
+    } else {
+        listwatcher = this.parentThatIsA(ListWatcherMorph);
+        if (listwatcher) {
+            listwatcher.fixLayout();
+        }
+    }
+};
+
+// CellMorph drawing:
+
+CellMorph.prototype.drawNew = function () {
+    var context,
+        txt,
+        img,
+        fontSize = SyntaxElementMorph.prototype.fontSize,
+        isSameList = this.contentsMorph instanceof ListWatcherMorph
+                && (this.contentsMorph.list === this.contents);
+
+    // re-build my contents
+    if (this.contentsMorph && !isSameList) {
+        this.contentsMorph.destroy();
+    }
+
+    if (!isSameList) {
+        if (this.contents instanceof Morph) {
+            this.contentsMorph = this.contents;
+        } else if (isString(this.contents)) {
+            txt  = this.contents.length > 500 ?
+                    this.contents.slice(0, 500) + '...' : this.contents;
+            this.contentsMorph = new TextMorph(
+                txt,
+                fontSize,
+                null,
+                true,
+                false,
+                'left' // was formerly 'center', reverted b/c of code-mapping
+            );
+            if (this.isEditable) {
+                this.contentsMorph.isEditable = true;
+                this.contentsMorph.enableSelecting();
+            }
+            this.contentsMorph.setColor(new Color(255, 255, 255));
+        } else if (this.contents instanceof List) {
+            if (this.isCircular()) {
+                this.contentsMorph = new TextMorph(
+                    '(...)',
+                    fontSize,
+                    null,
+                    false, // bold
+                    true, // italic
+                    'center'
+                );
+                this.contentsMorph.setColor(new Color(255, 255, 255));
+            } else {
+                this.contentsMorph = new ListWatcherMorph(
+                    this.contents,
+                    this
+                );
+                this.contentsMorph.isDraggable = false;
+            }
+        } else {
+            this.contentsMorph = new TextMorph(
+                !isNil(this.contents) ? this.contents.toString() : '',
+                fontSize,
+                null,
+                true,
+                false,
+                'center'
+            );
+            if (this.isEditable) {
+                this.contentsMorph.isEditable = true;
+                this.contentsMorph.enableSelecting();
+            }
+            this.contentsMorph.setColor(new Color(255, 255, 255));
+        }
+        this.add(this.contentsMorph);
+    }
+
+    // adjust my layout
+    this.silentSetHeight(this.contentsMorph.height()
+        + this.edge
+        + this.border * 2);
+    this.silentSetWidth(Math.max(
+        this.contentsMorph.width() + this.edge * 2,
+        (this.contents instanceof List ? 0 :
+                    SyntaxElementMorph.prototype.fontSize * 3.5)
+    ));
+
+    // draw my outline
+    this.image = newCanvas(this.extent());
+    context = this.image.getContext('2d');
+    if ((this.edge === 0) && (this.border === 0)) {
+        BoxMorph.uber.drawNew.call(this);
+        return null;
+    }
+    context.fillStyle = this.color.toString();
+    context.beginPath();
+    this.outlinePath(
+        context,
+        Math.max(this.edge - this.border, 0),
+        this.border
+    );
+    context.closePath();
+    context.fill();
+
+    // position my contents
+    if (!isSameList) {
+        this.contentsMorph.setCenter(this.center());
+    }
+};
+
+CellMorph.prototype.drawShadow = function (context, radius, inset) {
+    var offset = radius + inset,
+        w = this.width(),
+        h = this.height();
+
+    // bottom left:
+    context.beginPath();
+    context.moveTo(0, h - offset);
+    context.lineTo(0, offset);
+    context.stroke();
+
+    // top left:
+    context.beginPath();
+    context.arc(
+        offset,
+        offset,
+        radius,
+        radians(-180),
+        radians(-90),
+        false
+    );
+    context.stroke();
+
+    // top right:
+    context.beginPath();
+    context.moveTo(offset, 0);
+    context.lineTo(w - offset, 0);
+    context.stroke();
+};
+
+// CellMorph editing (inside list watchers):
+
+CellMorph.prototype.layoutChanged = function () {
+    var context,
+        fontSize = SyntaxElementMorph.prototype.fontSize,
+        listWatcher = this.parentThatIsA(ListWatcherMorph);
+
+    if (this.isBig) {
+        fontSize = fontSize * 1.5;
+    }
+
+    // adjust my layout
+    this.silentSetHeight(this.contentsMorph.height()
+        + this.edge
+        + this.border * 2);
+    this.silentSetWidth(Math.max(
+        this.contentsMorph.width() + this.edge * 2,
+        (this.contents instanceof Context ||
+            this.contents instanceof List ? 0 : this.height() * 2)
+    ));
+
+
+    // draw my outline
+    this.image = newCanvas(this.extent());
+    context = this.image.getContext('2d');
+    if ((this.edge === 0) && (this.border === 0)) {
+        BoxMorph.uber.drawNew.call(this);
+        return null;
+    }
+    context.fillStyle = this.color.toString();
+    context.beginPath();
+    this.outlinePath(
+        context,
+        Math.max(this.edge - this.border, 0),
+        this.border
+    );
+    context.closePath();
+    context.fill();
+    
+    // position my contents
+    this.contentsMorph.setCenter(this.center());
+
+    if (listWatcher) {
+        listWatcher.fixLayout();
+    }
+};
+
+CellMorph.prototype.reactToEdit = function (textMorph) {
+    var listWatcher;
+    if (!isNil(this.idx)) {
+        listWatcher = this.parentThatIsA(ListWatcherMorph);
+        if (listWatcher) {
+            listWatcher.list.put(textMorph.text, this.idx);
+        }
+    }
+};
+
+CellMorph.prototype.mouseClickLeft = function (pos) {
+    if (this.isEditable && this.contentsMorph instanceof TextMorph) {
+        this.contentsMorph.selectAllAndEdit();
+    } else {
+        this.escalateEvent('mouseClickLeft', pos);
+    }
+};
+
+// WatcherMorph //////////////////////////////////////////////////////////
+
+/*
+    I am a little window which observes some value and continuously
+    updates itself accordingly.
+*/
+
+// WatcherMorph inherits from BoxMorph:
+
+WatcherMorph.prototype = new BoxMorph();
+WatcherMorph.prototype.constructor = WatcherMorph;
+WatcherMorph.uber = BoxMorph.prototype;
+
+// WatcherMorph instance creation:
+
+function WatcherMorph(label, color, board, getter, isHidden) {
+    this.init(label, color, board, getter, isHidden);
+}
+
+WatcherMorph.prototype.init = function (
+    label,
+    color,
+    board,
+    getter,
+    isHidden
+) {
+    // additional properties
+    this.labelText = label || '';
+    this.version = null;
+    this.objName = '';
+
+    // initialize inherited properties
+    WatcherMorph.uber.init.call(
+        this,
+        SyntaxElementMorph.prototype.rounding,
+        1.000001, // shadow bug in Chrome,
+        new Color(120, 120, 120)
+    );
+
+    // override inherited behavior
+    this.color = new Color(220, 220, 220);
+    this.readoutColor = color;
+    this.style = 'normal';
+    this.board = board ;
+    this.getter = getter || null; // callback or variable name (string)
+    this.currentValue = null;
+    this.labelMorph = null;
+    this.cellMorph = null;
+    this.isDraggable = true;
+    this.fixLayout();
+    this.update();
+    if (isHidden) { // for de-serializing
+        this.hide();
+    }
+};
+
+// WatcherMorph updating:
+
+WatcherMorph.prototype.update = function () {
+    var newValue, num;
+
+    if (this.board && this.getter) {
+        /*
+        if (this.target instanceof VariableFrame) {
+            newValue = this.target.vars[this.getter] ?
+                    this.target.vars[this.getter].value : undefined;
+            if (newValue === undefined && this.target.owner) {
+                sprite = this.target.owner;
+                if (contains(sprite.inheritedVariableNames(), this.getter)) {
+                    newValue = this.target.getVar(this.getter);
+                    // ghost cell color
+                    this.cellMorph.setColor(
+                        SpriteMorph.prototype.blockColor.variables
+                            .lighter(35)
+                    );
+                } else {
+                    this.destroy();
+                    return;
+                }
+            } else {
+                // un-ghost the cell color
+                this.cellMorph.setColor(
+                    SpriteMorph.prototype.blockColor.variables
+                );
+            }
+        } else {
+            newValue = this.target[this.getter]();
+        }
+        if (newValue !== '' && !isNil(newValue)) {
+            num = +newValue;
+            if (typeof newValue !== 'boolean' && !isNaN(num)) {
+                newValue = Math.round(newValue * 1000000000) / 1000000000;
+            }
+        }
+        if (newValue !== this.currentValue) {
+            this.changed();
+            this.cellMorph.contents = newValue;
+            this.cellMorph.drawNew();
+            if (!isNaN(newValue)) {
+                this.sliderMorph.value = newValue;
+                this.sliderMorph.drawNew();
+            }
+            this.fixLayout();
+            this.currentValue = newValue;
+        }
+        */
+    }
+    if (this.cellMorph.contentsMorph instanceof ListWatcherMorph) {
+        this.cellMorph.contentsMorph.update();
+    }
+};
+
+// WatcherMorph layout:
+
+WatcherMorph.prototype.fixLayout = function () {
+    var fontSize = SyntaxElementMorph.prototype.fontSize, isList,
+        myself = this;
+
+    this.changed();
+
+    // create my parts
+    if (this.labelMorph === null) {
+        this.labelMorph = new StringMorph(
+            this.labelText,
+            fontSize,
+            null,
+            true,
+            false,
+            false,
+            new Point(),
+            new Color(255, 255, 255)
+        );
+        this.add(this.labelMorph);
+    }
+    if (this.cellMorph === null) {
+        this.cellMorph = new CellMorph('', this.readoutColor);
+        this.add(this.cellMorph);
+    }
+    
+    // adjust my layout
+    isList = this.cellMorph.contents instanceof List;
+
+    this.labelMorph.show();
+    this.labelMorph.setPosition(this.position().add(new Point(
+        this.edge,
+        this.border + SyntaxElementMorph.prototype.typeInPadding
+    )));
+
+    if (isList) {
+        this.cellMorph.setPosition(this.labelMorph.bottomLeft().add(
+            new Point(0, SyntaxElementMorph.prototype.typeInPadding)
+        ));
+    } else {
+        this.cellMorph.setPosition(this.labelMorph.topRight().add(new Point(
+            fontSize / 3,
+            0
+        )));
+        this.labelMorph.setTop(
+            this.cellMorph.top()
+                + (this.cellMorph.height() - this.labelMorph.height()) / 2
+        );
+    }
+
+    this.bounds.corner.y = this.cellMorph.bottom()
+        + this.border
+        + SyntaxElementMorph.prototype.typeInPadding;
+    this.bounds.corner.x = Math.max(
+        this.cellMorph.right(),
+        this.labelMorph.right()
+    ) + this.edge
+        + SyntaxElementMorph.prototype.typeInPadding;
+    this.drawNew();
+    this.changed();
+};
+
+// WatcherMorph drawing:
+
+WatcherMorph.prototype.drawNew = function () {
+    var context,
+        gradient;
+    this.image = newCanvas(this.extent());
+    context = this.image.getContext('2d');
+    BoxMorph.uber.drawNew.call(this);
 };

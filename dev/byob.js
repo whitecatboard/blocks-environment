@@ -2904,21 +2904,10 @@ VariableDialogMorph.prototype.init = function (target, action, environment) {
     );
 };
 
-VariableDialogMorph.prototype.addTypeButton
-    = BlockDialogMorph.prototype.addTypeButton;
-
-VariableDialogMorph.prototype.setType = function (varType) {
-    this.isGlobal = (varType === 'gobal');
-    this.types.children.forEach(function (c) {
-        c.refresh();
-    });
-    this.edit();
-};
-
 VariableDialogMorph.prototype.getInput = function () {
     // answer a tuple: [varName, isGlobal]
     var name = this.normalizeSpaces(this.body.getValue());
-    return name ? [name, this.isGlobal] : null;
+    return name;
 };
 
 VariableDialogMorph.prototype.fixLayout = function () {

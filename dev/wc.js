@@ -53,19 +53,19 @@
 
     pb  → Popup Bubble. A piece of data that should show up in a bubble.
 
-            The format is pb:[ID]:[data], where ID is the coroutine's ID, or
-            'r' in case it's just a reporter that got clicked.
+            The format is pb:[ID]:[data], where ID is the thread ID, or 'r' in
+            case it's just a reporter that got clicked.
 
-    rc  → Runnning Coroutine. A coroutine has just come alive.
+    rt  → Runnning Thread. A thread has just come alive.
 
             The format is rc:[ID]:[data], where data is optional. This
-            coroutine should be highlighted and possibly do something with
+            threadoroutine should be highlighted and possibly do something with
             the data it has just received.
 
-    dc  → Dead Coroutine. A coroutine has ended.
+    dt  → Dead Thread. A threadutine has ended.
 
             The format is dc:[ID]:[data], where data is optional. This
-            coroutine should be un-highlighted and possibly do something with
+            threadutine should be un-highlighted and possibly do something with
             the data it has just received.
 */
 
@@ -80,7 +80,9 @@ function toLuaDigital(val) {
 };
 
 function luaAutoEscape(aString) {
-    if (typeof aString === 'string') { 
+    if (!isNaN(Number(aString))) {
+        return aString;
+    } else if (typeof aString === 'string') { 
         return '"' + luaEscape(aString) + '"';
     } else {
         return 'tostring(' + aString + ')';
@@ -91,85 +93,28 @@ function luaEscape(aString) {
     return (aString.toString().replace("'","\\'")).replace('"', '\\"')
 };
 
-function yieldIf(condition) {
-    return condition ? ';c.yield();' : '';
-}
+// Threads map into Lua functions that can be run by our WhiteCat scheduler
+var Thread;
 
-// Coroutines map into Lua coroutines
-var Coroutine;
+Thread.prototype = {};
+Thread.prototype.constructor = Thread;
+Thread.uber = Object.prototype;
 
-Coroutine.prototype = {};
-Coroutine.prototype.constructor = Coroutine;
-Coroutine.uber = Object.prototype;
-
-function Coroutine(id, topBlock) {
+function Thread(id, topBlock) {
     this.init(id, topBlock);
 }
 
-Coroutine.prototype.init = function(id, topBlock) {
+Thread.prototype.init = function(id, topBlock) {
     this.id = id;
-    this.wasRunning = false;
     this.topBlock = topBlock;
 }
 
-Coroutine.prototype.setBody = function(body) {
-    this.body = 'c = coroutine; c' + this.id + ' = ' + this.wrap(body);
+Thread.prototype.setBody = function(body) {
+    this.body = 't' + this.id + ' = ' + this.wrap(body);
 }
 
-Coroutine.prototype.wrap = function(body) {
-    return 'c.create(function() print("rc:' + this.id + ':");' + body + '; c.yield(); end);\r';
-}
-
-Coroutine.prototype.setRunning = function(running) {
-    this.wasRunning = running == true;
-}
-
-// Scheduler handles coroutine threads
-var Scheduler;
-
-Scheduler.prototype = {};
-Scheduler.prototype.constructor = Scheduler;
-Scheduler.uber = Object.prototype;
-
-function Scheduler() {
-    this.init();
-}
-
-Scheduler.prototype.init = function() {
-    var myself = this;
-
-    this.coroutines = [];
-    this.rewriteHeader();
-
-    this.body = 'while (cn>0) do\rfor k,v in pairs(cr) do if (c.status(v)~="dead") then\rc.resume(v) else\rprint("dc:"..k..":");cn=cn-1;end;end;end;';
-}
-
-Scheduler.prototype.rewriteHeader = function() {
-    this.header = 'if (cr == null) then cr={};cn=0; end;';
-    this.coroutines.forEach(function(coroutine) {
-        myself.addCoroutine(coroutine);
-    });
-}
-
-Scheduler.prototype.addCoroutine = function(coroutine) {
-    if (!this.hasCoroutine(coroutine)) {
-        this.header += 'cr[' + coroutine.id + ']=c' + coroutine.id + ';cn=cn+1;';
-    }
-}
-
-Scheduler.prototype.removeCoroutine = function(coroutine) {
-    if (this.hasCoroutine(coroutine)) {
-        this.coroutines.splice(this.coroutines(indexOf(coroutine)), 1);
-        this.rewriteHeader();
-    }
-}
-
-Scheduler.prototype.hasCoroutine = function(coroutine) {
-    return detect(this.coroutines, function(each) { return each.id == coroutine.id });
-}
-
-Scheduler.prototype.toString = function() {
-    return this.header + this.body
+Thread.prototype.wrap = function(body) {
+    return 'function()\r\tprint("rt:' + this.id + ':")\r\t' + body + '\r\tprint("dt:' + this.id + ':")\rend\r';
 }
 
 // LuaExpression 
@@ -179,17 +124,16 @@ LuaExpression.prototype = {};
 LuaExpression.prototype.constructor = LuaExpression;
 LuaExpression.uber = Object.prototype;
 
-function LuaExpression(topBlock, board, shouldYield) {
-    this.init(topBlock, board, shouldYield)
+function LuaExpression(topBlock, board) {
+    this.init(topBlock, board)
 }
 
-LuaExpression.prototype.init = function(topBlock, board, shouldYield) {
+LuaExpression.prototype.init = function(topBlock, board) {
     if (!topBlock) { return };
 
     var args = [],
         nextBlock = topBlock.nextBlock ? topBlock.nextBlock() : null;
 
-    this.shouldYield = shouldYield;
     this.topBlock = topBlock;
     this.code = '';
     this.board = board;
@@ -202,29 +146,26 @@ LuaExpression.prototype.init = function(topBlock, board, shouldYield) {
             args.push(input.contents().text);
         } else if (input instanceof CSlotMorph) {
             // If it's a CSlotMorph, get its nested block
-            args.push(new LuaExpression(input.nestedBlock(), board, shouldYield));
+            args.push(new LuaExpression(input.nestedBlock(), board));
         } else if (input instanceof MultiArgMorph) {
             // If it's a variadic input, let's recursively traverse its inputs
             input.inputs().forEach(function(each) { translateInput(each) });
         } else {
             // Otherwise, it's a reporter, so we need to translate it into a LuaExpression 
-            args.push(new LuaExpression(input, board, shouldYield));
+            args.push(new LuaExpression(input, board));
         }
     }
 
     topBlock.inputs().forEach(function(each) { translateInput(each) });
 
-    if (topBlock.selector === 'subscribeToMQTTmessage') {
-        if (nextBlock) {
-            // Blocks fired by an MQTT event should never yield!
-            args.push((new LuaExpression(nextBlock, board, false)).toString());
-        }
+    if (topBlock.selector === 'subscribeToMQTTmessage' && nextBlock) {
+        args.push((new LuaExpression(nextBlock, board)).toString());
     } 
 
     this[topBlock.selector].apply(this, args);
 
     if (nextBlock && topBlock.selector !== 'subscribeToMQTTmessage') {
-        this.code += (new LuaExpression(nextBlock, board, shouldYield)).toString();
+        this.code += (new LuaExpression(nextBlock, board)).toString();
     }
 }
 
@@ -245,11 +186,11 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\r' + body + yieldIf(this.shouldYield) + 'end\r';
+    this.code = 'while (true) do\r' + body + 'end\r';
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\r' + body + yieldIf(this.shouldYield) + 'end\r';
+    this.code = 'for i=1,' + times + ' do\r' + body + 'end\r';
 };
 
 // Conditionals
@@ -259,23 +200,17 @@ LuaExpression.prototype.doIf = function (condition, body) {
 }
 
 LuaExpression.prototype.doIfElse = function (condition, ifTrue, ifFalse) {
-    this.code = 'if ' + condition + ' then\r' + ifTrue + '\relse\r' + ifFalse + '\rend' + yieldIf(this.shouldYield);
+    this.code = 'if ' + condition + ' then\r' + ifTrue + '\relse\r' + ifFalse + '\rend\r';
 }
 
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'local result = ' + body + '; print("pb:' + this.topBlock.coroutine.id + ':" .. tostring(result)); return result\r';
+    this.code = 'local result = ' + body + '; print("pb:' + this.topBlock.thread.id + ':" .. tostring(body)); return result\r';
 }
 
 LuaExpression.prototype.doWait = function (secs) {
-    if (this.shouldYield) {
-        this.code
-            = 'local t = tmr.read(); while (tmr.getdiffnow(nil, t) < ('
-            + secs + ' * 100000000)) do c.yield(); end local t = nil\r';
-    } else {
-        this.code = 'tmr.delay(tmr.SYS_TIMER, ' + secs + ' * tmr.SEC)'
-    }
+    this.code = 'tmr.delayms(' + secs + ' * 1000)\r'
 }
 
 
@@ -364,10 +299,22 @@ LuaExpression.prototype.reportJoinWords = function () {
 }
 
 LuaExpression.prototype.runLua = function(code) {
-    this.code = 'local f = (function() ' + code + ' end)(); if (f) then print("pb:' + this.topBlock.coroutine.id + ':" .. f) end;\r';
+    this.code = 'local f = (function() ' + code + ' end)(); if (f) then print("pb:' + this.topBlock.thread.id + ':" .. f) end;\r';
 }
 
 //// Data
+
+LuaExpression.prototype.doSetVar = function(varName, value) {
+    this.code = varName + ' = ' + luaAutoEscape(value) + '\r';
+}
+
+LuaExpression.prototype.doChangeVar = function(varName, delta) {
+    this.code = varName + ' = ' + varName + ' + ' + delta + '\r';
+}
+
+LuaExpression.prototype.reportGetVar = function(varName) {
+    this.code = this.topBlock.blockSpec;
+}
 
 LuaExpression.prototype.reportNewList = function() {
     var myself = this;
@@ -392,7 +339,7 @@ LuaExpression.prototype.reportListItem = function(index, list) {
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = this.board.pinOut.digitalOutput[pinNumber];
     // pio.OUTPUT is 0
-    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ');' + yieldIf(this.shouldYield)
+    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r'
 }
 
 LuaExpression.prototype.getPinDigital = function(pinNumber) {
@@ -407,8 +354,7 @@ LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
 }
 
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
-    // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
-    // pio.INPUT is 1
+    // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
     var pin = this.board.pinOut.analogInput[pinNumber];
     this.code = '(function () a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
 }
@@ -417,17 +363,16 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
 
 LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
     this.code 
-        = 'if (m == nil) then ' + this.board.mqttConnectionCode() + ' c.yield() end m:subscribe(' + luaAutoEscape(topic) 
+        = 'if (m == nil) then ' + this.board.mqttConnectionCode() + ' end m:subscribe(' + luaAutoEscape(topic) 
         + ', mqtt.QOS0, (function(l, p) if (p == ' + luaAutoEscape(message)
-        + ') then print("rc:' + this.topBlock.coroutine.id + ':"..p);'
-        + body + ' print("dc:' + this.topBlock.coroutine.id + ':"..p); end end))\r';
+        + ') then print("rc:' + this.topBlock.thread.id + ':"..p);'
+        + body + ' print("dc:' + this.topBlock.thread.id + ':"..p); end end))\r';
 }
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
     this.code
         = 'if (m == nil) do ' + this.board.mqttConnectionCode() + ' end m:publish(' + luaAutoEscape(topic) 
-        + ', ' + luaAutoEscape(message) + ', mqtt.QOS0)'
-        + yieldIf(this.shouldYield);
+        + ', ' + luaAutoEscape(message) + ', mqtt.QOS0)\r'
 }
 
 

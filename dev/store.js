@@ -284,20 +284,15 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode, ide) {
         project.notes = model.notes.contents;
     }
 
-    /*
-    model.globalVariables = model.project.childNamed('variables');
-    project.globalVariables = new VariableFrame();
-    */
-    /* Global Variables */
+    model.variables = model.project.childNamed('variables');
+    project.variables = {};
 
-    /*
-    if (model.globalVariables) {
+    if (model.variables) {
         this.loadVariables(
-            project.globalVariables,
-            model.globalVariables
+            project.variables,
+            model.variables
         );
     }
-    */
 
     /* Watchers */
 
@@ -425,25 +420,22 @@ SnapSerializer.prototype.loadObject = function (object, model) {
     var blocks = model.require('blocks');
     this.loadCustomBlocks(object, blocks);
     this.populateCustomBlocks(object, blocks);
-//    this.loadVariables(object.variables, model.require('variables'));
+    this.loadVariables(object.variables, model.require('variables'));
     this.loadScripts(object.scripts, model.require('scripts'));
 };
 
-SnapSerializer.prototype.loadVariables = function (varFrame, element) {
+SnapSerializer.prototype.loadVariables = function (varDict, element) {
     // private
     var myself = this;
 
-    /*
     element.children.forEach(function (child) {
         var value;
         if (child.tag !== 'variable') {
             return;
         }
         value = child.children[0];
-        varFrame.vars[child.attributes.name] = new Variable(value ?
-                myself.loadValue(value) : 0);
+        varDict[child.attributes.name] = value ? myself.loadValue(value) : 0;
     });
-    */
 };
 
 SnapSerializer.prototype.loadCustomBlocks = function (
