@@ -454,9 +454,9 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
 
         this.serialPort.on('open', function (err) {
             if (err) { console.log(err) };
-            myself.stopAll();
+            myself.startUp();
             myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
-            myself.stopAllInterval = setInterval(function() { myself.stopAll() }, 2000);
+            myself.startUpInterval = setInterval(function() { myself.startUp() }, 2000);
             myself.serialPort.on('data', function(data) {
                 myself.parseSerialResponse(data);
             });
@@ -515,23 +515,31 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 5);
         }
-    } else if (data.slice(0,2) === 'rt') {
+    } else if (data.search('rt:') > -1) {
         // It's a thread that just came alive and its corresponding stack should be highlighted
-        var id = data.match(/^rt:(.*?):/, '$1')[1],
-            thread = myself.findThread(Number.parseInt(id));
-        // This thread may not exist anymore
-        if (thread) { thread.topBlock.addHighlight(thread.topBlock.removeHighlight()) };
-    } else if (data.slice(0,2) === 'dt') {
+        try {
+            var id = data.match(/rt:(.*?):/)[1],
+                thread = myself.findThread(Number.parseInt(id));
+            // This thread may not exist anymore
+            if (thread) { thread.topBlock.addHighlight(thread.topBlock.removeHighlight()) };
+        } catch(err) {
+            console.log(err);
+        }
+    } else if (data.search('dt:') > -1) {
         // It's a dead thread and its corresponding stack should be un-highlighted
-        var id = data.match(/^dt:(.*?):/, '$1')[1],
-            thread = myself.findThread(Number.parseInt(id));
-        // This thread may not exist anymore
-        if (thread) {
-            thread.topBlock.removeHighlight();
-        };
-    } else if (this.stopAllInterval && data.slice(data.length - 3, data.length - 2) === '>') {
-        clearInterval(this.stopAllInterval);
-        this.stopAllInterval = null;
+        try {
+            var id = data.match(/dt:(.*?):/)[1],
+                thread = myself.findThread(Number.parseInt(id));
+            // This thread may not exist anymore
+            if (thread) {
+                thread.topBlock.removeHighlight();
+            };
+        } catch (err) {
+            console.log(err);
+        }
+    } else if (this.startUpInterval && data.slice(data.length - 3, data.length - 2) === '>') {
+        clearInterval(this.startUpInterval);
+        this.startUpInterval = null;
         this.reset();
         myself.ide.showMessage('Board ready.', 2);
     } else {
@@ -558,37 +566,45 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
     });
 }
 
+BoardMorph.prototype.suspendAll = function() {
+    this.serialPort.write('thread.suspend()\r');
+}
+
+BoardMorph.prototype.resumeAll = function() {
+    this.serialPort.write('thread.resume()\r');
+}
+
+BoardMorph.prototype.startUp = function() {
+    this.serialPort.write('\r\r');
+}
+
 BoardMorph.prototype.stopAll = function() {
-    var output = '\r';
-    this.threads.forEach(function(eachThread) {
-        output += 'thread.remove(t' + eachThread.id + ');'
-    });
-    this.serialPort.write(output);
+    this.serialPort.write('thread.stop()\r');
 }
 
 BoardMorph.prototype.reset = function() {
-    this.serialPort.write('os.exit()\r');
+    this.serialPort.write('thread.stop();os.exit()\r');
 }
 // Thread handling
 
-BoardMorph.prototype.addThreadForBlock = function(topBlock) {
+BoardMorph.prototype.threadForBlock = function(topBlock) {
     var thread, 
-        id = 0;
+    id = 0;
 
     if (topBlock.thread) {
-        topBlock.thread.setBody(new LuaExpression(topBlock, this));
-        return topBlock.thread;
-    }
-    
-    if (this.threads.length > 0) {
-        id = this.threads[this.threads.length - 1].id + 1;
+        topBlock.thread.updateBody(new LuaExpression(topBlock, this));
+        thread = topBlock.thread;
+    } else {
+        if (this.threads.length > 0) {
+            id = this.threads[this.threads.length - 1].id + 1;
+        }
+        thread = new Thread(id, topBlock);
+        topBlock.thread = thread;
+        thread.setBody(new LuaExpression(topBlock, this));
+        this.addThread(thread);
     }
 
-    thread = new Thread(id, topBlock);
-    topBlock.thread = thread;
-    thread.setBody(new LuaExpression(topBlock, this));
-
-    return this.addThread(thread);
+    return thread;
 }
 
 BoardMorph.prototype.addThread = function(thread) {
@@ -610,8 +626,8 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
     this.outputData = '';
     this.outputIndex = 0;
 
-    this.clearThreads();
-    this.stopAll();
+//    this.clearThreads();
+//    this.stopAll();
 
     this.scripts.children.forEach(function(topBlock) {
 
@@ -621,18 +637,16 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
         };
 
         // If the thread is already there, we'll update it
-        var thread = myself.addThreadForBlock(topBlock);
+        var thread = myself.threadForBlock(topBlock);
         
         myself.outputData += thread.body;
         if (topBlocksToRun.indexOf(topBlock) > -1) {
-            myself.outputData += 'thread.add(t' + thread.id + ')\r';
+            myself.outputData += 't_' + thread.id + ' = thread.start(t' + thread.id + ')\r';
             if (!topBlock.getHighlight() && !topBlock.selector == 'subscribeToMQTTmessage') {
                 topBlock.addHighlight()
             };
         };
     })
-
-    this.outputData += 'thread.run()\r';
 
     require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
 

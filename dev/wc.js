@@ -113,8 +113,29 @@ Thread.prototype.setBody = function(body) {
     this.body = 't' + this.id + ' = ' + this.wrap(body);
 }
 
+Thread.prototype.updateBody = function(body) {
+    this.setBody(body);
+    this.body += this.stop();
+}
+
 Thread.prototype.wrap = function(body) {
     return 'function()\r\tprint("rt:' + this.id + ':")\r\t' + body + '\r\tprint("dt:' + this.id + ':")\rend\r';
+}
+
+Thread.prototype.start = function() {
+    return 'thread.start(t' + this.id + ')\r'
+}
+
+Thread.prototype.suspend = function() {
+    return 'thread.suspend(t_' + this.id + ')\r'
+}
+
+Thread.prototype.resume = function() {
+    return 'thread.resume(t_' + this.id + ')\r'
+}
+
+Thread.prototype.stop = function() {
+    return 'thread.stop(t_' + this.id + ')\r'
 }
 
 // LuaExpression 
