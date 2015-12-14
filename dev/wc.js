@@ -59,13 +59,13 @@
     rt  → Runnning Thread. A thread has just come alive.
 
             The format is rc:[ID]:[data], where data is optional. This
-            threadoroutine should be highlighted and possibly do something with
+            thread should be highlighted and possibly do something with
             the data it has just received.
 
-    dt  → Dead Thread. A threadutine has ended.
+    dt  → Dead Thread. A thread has ended.
 
             The format is dc:[ID]:[data], where data is optional. This
-            threadutine should be un-highlighted and possibly do something with
+            thread should be un-highlighted and possibly do something with
             the data it has just received.
 */
 
@@ -76,16 +76,18 @@ console.log = function (d) {
 };
 
 function toLuaDigital(val) {
+    // makes sure val is understood as a boolean by Lua
     return '((' + val + ' == true or ' + val + ' == 1) and 1 or 0)'
 };
 
-function luaAutoEscape(aString) {
-    if (!isNaN(Number(aString))) {
-        return aString;
-    } else if (typeof aString === 'string') { 
-        return '"' + luaEscape(aString) + '"';
+function luaAutoEscape(something) {
+    // automatically escapes, or not, a possible string
+    if (!isNaN(Number(something))) {
+        return something;
+    } else if (typeof something === 'string') { 
+        return '"' + luaEscape(something) + '"';
     } else {
-        return 'tostring(' + aString + ')';
+        return 'tostring(' + something + ')';
     }
 };
 
@@ -93,7 +95,16 @@ function luaEscape(aString) {
     return (aString.toString().replace("'","\\'")).replace('"', '\\"')
 };
 
-// Threads map into Lua functions that can be run by our WhiteCat scheduler
+function randomFace() {
+    // just a little goodie
+    function expression() { 
+        var expressions = ['~_~', '-_-', 'U_U', 'º_º', 'ɵ_ɵ', '˚O˚', '˚o˚', '~˷~'];
+        return expressions[Math.floor(Math.random() * expressions.length)];
+    };
+    return 'ͼ(' + expression() + ')ͽ';
+}
+
+// Threads map into Lua functions that can be run by the WhiteCat scheduler
 var Thread;
 
 Thread.prototype = {};
@@ -127,15 +138,19 @@ Thread.prototype.start = function() {
 }
 
 Thread.prototype.suspend = function() {
-    return 'thread.suspend(t_' + this.id + ')\r'
+    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.suspend(t_' + this.id + ') end\r'
 }
 
 Thread.prototype.resume = function() {
-    return 'thread.resume(t_' + this.id + ')\r'
+    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.resume(t_' + this.id + ') end\r'
 }
 
 Thread.prototype.stop = function() {
-    return 'thread.stop(t_' + this.id + ')\r'
+    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.stop(t_' + this.id + ') end\r'
+}
+
+Thread.prototype.restart = function() {
+    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.stop(t_' + this.id + ') end thread.start(t' + this.id + ')\r'
 }
 
 // LuaExpression 
@@ -179,7 +194,7 @@ LuaExpression.prototype.init = function(topBlock, board) {
 
     topBlock.inputs().forEach(function(each) { translateInput(each) });
 
-    if (topBlock.selector === 'subscribeToMQTTmessage' && nextBlock) {
+    if (nextBlock && topBlock.selector === 'subscribeToMQTTmessage') {
         args.push((new LuaExpression(nextBlock, board)).toString());
     } 
 
@@ -326,15 +341,15 @@ LuaExpression.prototype.runLua = function(code) {
 //// Data
 
 LuaExpression.prototype.doSetVar = function(varName, value) {
-    this.code = varName + ' = ' + luaAutoEscape(value) + '\r';
+    this.code = 'globals.' + varName + ' = ' + luaAutoEscape(value) + '\r';
 }
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
-    this.code = varName + ' = ' + varName + ' + ' + delta + '\r';
+    this.code = 'globals.' + varName + ' = globals.' + varName + ' + ' + delta + '\r';
 }
 
-LuaExpression.prototype.reportGetVar = function(varName) {
-    this.code = this.topBlock.blockSpec;
+LuaExpression.prototype.reportGetVar = function() {
+    this.code = 'globals.' + this.topBlock.blockSpec;
 }
 
 LuaExpression.prototype.reportNewList = function() {
@@ -367,7 +382,7 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
     var pin = this.board.pinOut.digitalInput[pinNumber];
-    this.code = '(function () pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
+    this.code = '(function() pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
 }
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
@@ -377,11 +392,10 @@ LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
     var pin = this.board.pinOut.analogInput[pinNumber];
-    this.code = '(function () a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
+    this.code = '(function() a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
 }
 
 //// Comm
-
 LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
     this.code 
         = 'if (m == nil) then ' + this.board.mqttConnectionCode() + ' end m:subscribe(' + luaAutoEscape(topic) 

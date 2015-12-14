@@ -185,7 +185,7 @@ BoardMorph.prototype.initBlocks = function () {
         reportLessThan: {
             type: 'reporter',
             category: 'operators',
-            spec: '%s < %s'
+            spec: '%n < %n'
         },
         reportEquals: {
             type: 'reporter',
@@ -195,7 +195,7 @@ BoardMorph.prototype.initBlocks = function () {
         reportGreaterThan: {
             type: 'reporter',
             category: 'operators',
-            spec: '%s > %s'
+            spec: '%n > %n'
         },
         reportAnd: {
             type: 'reporter',
@@ -456,7 +456,12 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             if (err) { console.log(err) };
             myself.startUp();
             myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
-            myself.startUpInterval = setInterval(function() { myself.startUp() }, 2000);
+            myself.startUpInterval = 
+                setInterval(function() {
+                    myself.ide.showModalMessage('Waiting for board to be ready...\n' + randomFace());
+                    myself.startUp() 
+                }, 
+                2000);
             myself.serialPort.on('data', function(data) {
                 myself.parseSerialResponse(data);
             });
@@ -477,17 +482,10 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
 
     if (data === 'C') {
         // We've been given permission to send the next chunk of a script (_C_hunk)
+        console.log('next chunk please');
         if (this.outputData) {
-            var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 255),
-                buffer = new Buffer(chunk.length + 1);
-       
-            buffer[0] = chunk.length;
-            buffer.write(chunk, 1);
-
-            this.serialPort.write(buffer);
-        
-            this.outputIndex += 255;
             if (this.outputIndex > this.outputData.length) {
+                console.log('all done');
                 // we're done
                 this.outputData = null;
                 this.outputIndex = 0;
@@ -495,6 +493,18 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 buffer[0] = 0;
                 buffer.write('\rdofile("autorun.lua")\r', 1);
                 this.serialPort.write(buffer);
+            } else {
+                var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 254),
+                    buffer = new Buffer(chunk.length + 1);
+
+                buffer[0] = chunk.length;
+                buffer.write(chunk, 1);
+
+                console.log(' + sending a ' + chunk.length + ' bytes long chunk');
+
+                this.serialPort.write(buffer);
+
+                this.outputIndex += 254;
             }
         }
     } else if (data.slice(0,2) === 'pb') {
@@ -579,22 +589,24 @@ BoardMorph.prototype.startUp = function() {
 }
 
 BoardMorph.prototype.stopAll = function() {
-    this.serialPort.write('thread.stop()\r');
+    this.serialPort.write('thread.stop()\rthread.stop()\r');
 }
 
 BoardMorph.prototype.reset = function() {
-    this.serialPort.write('thread.stop();os.exit()\r');
+    //this.serialPort.write('thread.stop();os.exit()\r');
+    this.stopAll();
 }
+
 // Thread handling
 
-BoardMorph.prototype.threadForBlock = function(topBlock) {
+BoardMorph.prototype.threadForBlock = function(topBlock, topBlocksToRun) {
     var thread, 
     id = 0;
 
-    if (topBlock.thread) {
+    if (topBlock.thread && contains(topBlocksToRun, topBlock)) {
         topBlock.thread.updateBody(new LuaExpression(topBlock, this));
         thread = topBlock.thread;
-    } else {
+    } else if (!topBlock.thread) {
         if (this.threads.length > 0) {
             id = this.threads[this.threads.length - 1].id + 1;
         }
@@ -602,6 +614,8 @@ BoardMorph.prototype.threadForBlock = function(topBlock) {
         topBlock.thread = thread;
         thread.setBody(new LuaExpression(topBlock, this));
         this.addThread(thread);
+    } else {
+        thread = topBlock.thread;
     }
 
     return thread;
@@ -621,13 +635,12 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
     // Fire up the threads that correspond with topBlocksToRun
     // Add all that to autorun.lua so it's persistent upon reset
 
+    if (this.outputData) { return };
+
     var myself = this;
 
-    this.outputData = '';
+    this.outputData = 'if (not globals) then globals = {} end\r';
     this.outputIndex = 0;
-
-//    this.clearThreads();
-//    this.stopAll();
 
     this.scripts.children.forEach(function(topBlock) {
 
@@ -637,17 +650,23 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
         };
 
         // If the thread is already there, we'll update it
-        var thread = myself.threadForBlock(topBlock);
-        
-        myself.outputData += thread.body;
-        if (topBlocksToRun.indexOf(topBlock) > -1) {
-            myself.outputData += 't_' + thread.id + ' = thread.start(t' + thread.id + ')\r';
+        var thread = myself.threadForBlock(topBlock, topBlocksToRun);
+
+        if (topBlock.getHighlight()) {
+            // This one was already running, so it has to be in autorun.lua
+            myself.outputData += thread.body;
+            myself.outputData += thread.restart();
+        } else if (contains(topBlocksToRun, topBlock)) {
+            myself.outputData += thread.body;
+            myself.outputData += thread.start();
             if (!topBlock.getHighlight() && !topBlock.selector == 'subscribeToMQTTmessage') {
                 topBlock.addHighlight()
             };
         };
     })
 
+    console.log('sending ' + this.outputData.length + ' bytes');
+    
     require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
 
     // We start writing
@@ -753,11 +772,13 @@ BoardMorph.prototype.connectToMQTTBroker = function() {
     if (!this.broker.url || !this.broker.port || !this.broker.deviceID) { return };
 
     this.stopAll();
-    this.serialPort.write(this.mqttConnectionCode());
+    this.outputData = this.mqttConnectionCode();
+    this.outputIndex = 0;
+    this.serialPort.write(this.mqttConnectionCode() + '\rio.receive("system.lua")\r');
 }
 
 BoardMorph.prototype.mqttConnectionCode = function() {
-    return ('m = (function () local c = mqtt.client("' 
+    return ('net.start("en")\rm = (function () local c = mqtt.client("' 
             + this.broker.deviceID + '", "' + this.broker.url + '", ' + this.broker.port + ', false); c:connect("' 
             + this.broker.username + '","' + this.broker.password + '"); return c; end)();\r');
 }
@@ -875,6 +896,8 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('doIfElse'));
         blocks.push('-');
         blocks.push(block('doReport'));
+        // Not yet implemented
+        /*
         blocks.push('-');
         blocks.push(block('doStopThis'));
         blocks.push(block('doStopOthers'));
@@ -883,14 +906,18 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('fork'));
         blocks.push(block('evaluate'));
         blocks.push('-');
+        */
         
 
     } else if (cat === 'operators') {
 
+        // Not yet implemented
+        /*
         blocks.push(block('reifyScript'));
         blocks.push(block('reifyReporter'));
         blocks.push('#');
         blocks.push('-');
+        */
         blocks.push(block('reportSum'));
         blocks.push(block('reportDifference'));
         blocks.push(block('reportProduct'));
@@ -1029,7 +1056,11 @@ BoardMorph.prototype.blockTemplates = function (category) {
         button.userMenu = helpMenu;
         button.selector = 'addCustomBlock';
         button.showHelp = BlockMorph.prototype.showHelp;
+        // Not yet implemented
+        /*
         blocks.push(button);
+        */
+        blocks.push(new TextMorph('Not available yet'))
     }
     return blocks;
 };

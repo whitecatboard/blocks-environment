@@ -630,7 +630,7 @@ IDE_Morph.prototype.fireGreenFlagEvent = function () {
 IDE_Morph.prototype.fireStopAllEvent = function () {
     this.board.stopAll();
     this.board.scripts.children.forEach(function(each) {
-        if (!each instanceof WatcherMorph) { 
+        if (!(each instanceof WatcherMorph)) { 
             each.removeHighlight();
         }
     });
