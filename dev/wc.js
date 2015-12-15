@@ -80,6 +80,10 @@ function toLuaDigital(val) {
     return '((' + val + ' == true or ' + val + ' == 1) and 1 or 0)'
 };
 
+function toLuaNumber(val) {
+    return '(' + val + ' + 0)';
+}
+
 function luaAutoEscape(something) {
     // automatically escapes, or not, a possible string
     if (!isNaN(Number(something))) {
@@ -291,7 +295,7 @@ LuaExpression.prototype.reportRandom = function (a, b) {
 }
 
 LuaExpression.prototype.reportLessThan = function (a, b) {
-    this.code = '(' + a + ' < ' + b + ')';
+    this.code = '(' + toLuaNumber(a) + ' < ' + toLuaNumber(b) + ')';
 }
 
 LuaExpression.prototype.reportEquals = function (a, b) {
@@ -299,19 +303,19 @@ LuaExpression.prototype.reportEquals = function (a, b) {
 }
 
 LuaExpression.prototype.reportGreaterThan = function (a, b) {
-    this.code = '(' + a + ' > ' + b + ')';
+    this.code = '(' + toLuaNumber(a) + ' > ' + toLuaNumber(b) + ')';
 }
 
 LuaExpression.prototype.reportAnd = function (a, b) {
-    this.code = '(' + a + ' and ' + b + ')';
+    this.code = '(' + toLuaDigital(a) + ' and ' + toLuaDigital(b) + ')';
 }
 
 LuaExpression.prototype.reportOr = function (a, b) {
-    this.code = '(' + a + ' or ' + b + ')';
+    this.code = '(' + toLuaDigital(a) + ' or ' + toLuaDigital(b) + ')';
 }
 
 LuaExpression.prototype.reportNot = function (a) {
-    this.code = '(not ' + a + ')';
+    this.code = '(not ' + toLuaDigital(a) + ')';
 }
 
 LuaExpression.prototype.reportTrue = function () {
