@@ -550,8 +550,12 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
     } else if (this.startUpInterval && data.slice(data.length - 3, data.length - 2) === '>') {
         clearInterval(this.startUpInterval);
         this.startUpInterval = null;
-        this.reset();
         myself.ide.showMessage('Board ready.', 2);
+        myself.pushInterval = 
+            setInterval(function() {
+                // should update...
+            }, 
+            1000);
     } else {
         console.log(data);
     }
@@ -604,7 +608,7 @@ BoardMorph.prototype.threadForBlock = function(topBlock, topBlocksToRun) {
     id = 0;
 
     if (topBlock.thread && contains(topBlocksToRun, topBlock)) {
-        topBlock.thread.updateBody(new LuaExpression(topBlock, this));
+        topBlock.thread.setBody(new LuaExpression(topBlock, this));
         thread = topBlock.thread;
     } else if (!topBlock.thread) {
         if (this.threads.length > 0) {
@@ -644,7 +648,8 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
 
     this.scripts.children.forEach(function(topBlock) {
 
-        if (topBlock instanceof ReporterBlockMorph 
+        if (!(topBlock instanceof BlockMorph)
+                || topBlock instanceof ReporterBlockMorph 
                 || topBlock instanceof WatcherMorph) { 
             return 
         };
@@ -666,8 +671,8 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
     })
 
     console.log('sending ' + this.outputData.length + ' bytes');
-    
-    require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
+
+    // require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
 
     // We start writing
     // BoardMorph.prototype.parseSerialResponse takes over

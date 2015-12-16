@@ -48,9 +48,7 @@ var ScriptFocusMorph;
 
 WorldMorph.prototype.customMorphs = function () {
     // add examples to the world's demo menu
-
     return [];
-
 };
 
 
@@ -692,23 +690,6 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             );
             part.setContents(1);
             break;
-        case '%msg':
-            part = new InputSlotMorph(
-                null,
-                false,
-                'messagesMenu',
-                true
-            );
-            break;
-        case '%msgHat':
-            part = new InputSlotMorph(
-                null,
-                false,
-                'messagesReceivedMenu',
-                true
-            );
-            part.isStatic = true;
-            break;
         case '%att':
             part = new InputSlotMorph(
                 null,
@@ -739,23 +720,6 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
                 true
             );
             part.setContents(['sqrt']);
-            break;
-        case '%txtfun':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    'encode URI' : ['encode URI'],
-                    'decode URI' : ['decode URI'],
-                    'encode URI component' : ['encode URI component'],
-                    'decode URI component' : ['decode URI component'],
-                    'XML escape' : ['XML escape'],
-                    'XML unescape' : ['XML unescape'],
-                    'hex sha512 hash' : ['hex sha512 hash']
-                },
-                true
-            );
-            part.setContents(['encode URI']);
             break;
         case '%stopChoices':
             part = new InputSlotMorph(
@@ -823,18 +787,6 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
                 },
                 true
             );
-            break;
-        case '%codeKind':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    code : ['code'],
-                    header : ['header']
-                },
-                true
-            );
-            part.setContents(['code']);
             break;
         case '%l':
             part = new ArgMorph('list');
@@ -1624,12 +1576,6 @@ BlockMorph.prototype.userMenu = function () {
                 console.log(exp.toString());
             }
             );
-    menu.addItem(
-            'My Selector',
-            function() {
-                myself.showBubble(myself.selector)
-            }
-            );
 
     menu.addLine();
 
@@ -2356,6 +2302,14 @@ BlockMorph.prototype.thumbnail = function (scale, clipWidth) {
     return trgt;
 };
 
+// Thread updating
+
+BlockMorph.prototype.updateThread = function () {
+    if (this.topBlock().getHighlight()) {
+        this.receiver().buildThreads([this.topBlock()]);
+    }
+};
+
 // BlockMorph dragging and dropping
 
 BlockMorph.prototype.rootForGrab = function () {
@@ -2385,6 +2339,7 @@ BlockMorph.prototype.reactToDropOf = function (droppedMorph) {
     }
     this.fixLayout();
     this.buildSpec();
+    this.updateThread();
 };
 
 BlockMorph.prototype.situation = function () {
@@ -2404,6 +2359,7 @@ BlockMorph.prototype.situation = function () {
 
 BlockMorph.prototype.prepareToBeGrabbed = function (hand) {
     var myself = this;
+    this.previousTop = this.topBlock();
     this.allComments().forEach(function (comment) {
         comment.startFollowing(myself, hand.world);
     });
@@ -2413,6 +2369,10 @@ BlockMorph.prototype.justDropped = function () {
     this.allComments().forEach(function (comment) {
         comment.stopFollowing();
     });
+    if (this.previousTop) {
+        this.previousTop.updateThread();
+        this.previousTop = null;
+    }
 };
 
 BlockMorph.prototype.allComments = function () {
@@ -2428,6 +2388,7 @@ BlockMorph.prototype.destroy = function () {
         comment.destroy();
     });
     BlockMorph.uber.destroy.call(this);
+    this.updateThread();
 };
 
 BlockMorph.prototype.stackHeight = function () {
@@ -2450,6 +2411,7 @@ BlockMorph.prototype.snap = function () {
     if (top.getHighlight()) {
         top.addHighlight(top.removeHighlight());
     }
+    this.updateThread();
 };
 
 // CommandBlockMorph ///////////////////////////////////////////////////
@@ -5778,6 +5740,9 @@ InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
     if (this.isReadOnly && (this.parent instanceof BlockMorph)) {
         this.parent.fixLabelColor();
     }
+    if (this.parent instanceof BlockMorph) {
+        this.parent.updateThread();
+    }
 
     // remember the constant, if any
     this.constant = isConstant ? aStringOrFloat : null;
@@ -5954,6 +5919,9 @@ InputSlotMorph.prototype.reactToKeystroke = function () {
 
 InputSlotMorph.prototype.reactToEdit = function () {
     this.contents().clearSelection();
+    if (this.parent instanceof BlockMorph) {
+        this.parent.updateThread();
+    }
 };
 
 InputSlotMorph.prototype.reactToSliderEdit = function () {

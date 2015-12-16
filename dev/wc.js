@@ -140,7 +140,7 @@ Thread.prototype.wrap = function(body) {
 Thread.prototype.start = function() {
     return 'thread.start(t' + this.id + ')\r'
 }
-
+/*
 Thread.prototype.suspend = function() {
     return 'if (thread.status(t_' + this.id + ' or -1)) then thread.suspend(t_' + this.id + ') end\r'
 }
@@ -148,13 +148,13 @@ Thread.prototype.suspend = function() {
 Thread.prototype.resume = function() {
     return 'if (thread.status(t_' + this.id + ' or -1)) then thread.resume(t_' + this.id + ') end\r'
 }
-
+*/
 Thread.prototype.stop = function() {
-    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.stop(t_' + this.id + ') end\r'
+    return 'thread.stop(t_' + this.id + ')\r'
 }
 
 Thread.prototype.restart = function() {
-    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.stop(t_' + this.id + ') end thread.start(t' + this.id + ')\r'
+    return this.stop() + this.start();
 }
 
 // LuaExpression 

@@ -1110,6 +1110,7 @@ function isNil(thing) {
 
 function contains(list, element) {
     // answer true if element is a member of list
+    if (!list) { return };
     return list.some(function (any) {
         return any === element;
     });
