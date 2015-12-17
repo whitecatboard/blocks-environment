@@ -532,322 +532,352 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
 
         // single-arg and specialized multi-arg slots:
         switch (spec) {
-        case '%inputs':
-            part = new MultiArgMorph('%s', 'with inputs');
-            part.isStatic = false;
-            part.canBeEmpty = false;
-            break;
-        case '%scriptVars':
-            part = new MultiArgMorph('%t', null, 1, spec);
-            part.canBeEmpty = false;
-            break;
-        case '%parms':
-            part = new MultiArgMorph('%t', 'Input Names:', 0, spec);
-            part.canBeEmpty = false;
-            break;
-        case '%ringparms':
-            part = new MultiArgMorph(
-                '%t',
-                'input names:',
-                0,
-                spec
-            );
-            break;
-        case '%cmdRing':
-            part = new RingMorph();
-            part.color = BoardMorph.prototype.blockColor['custom blocks'];
-            part.selector = 'reifyScript';
-            part.setSpec('%rc %ringparms');
-            part.isDraggable = true;
-            break;
-        case '%repRing':
-            part = new RingMorph();
-            part.color = BoardMorph.prototype.blockColor['custom blocks'];
-            part.selector = 'reifyReporter';
-            part.setSpec('%rr %ringparms');
-            part.isDraggable = true;
-            part.isStatic = true;
-            break;
-        case '%predRing':
-            part = new RingMorph(true);
-            part.color = BoardMorph.prototype.blockColor.custom;
-            part.selector = 'reifyPredicate';
-            part.setSpec('%rp %ringparms');
-            part.isDraggable = true;
-            part.isStatic = true;
-            break;
-        case '%words':
-            part = new MultiArgMorph('%s', null, 0);
-            part.addInput(); // allow for default value setting
-            part.addInput(); // allow for default value setting
-            part.isStatic = false;
-            break;
-        case '%exp':
-            part = new MultiArgMorph('%s', null, 0);
-            part.addInput();
-            part.isStatic = true;
-            part.canBeEmpty = false;
-            break;
-        case '%br':
-            part = new Morph();
-            part.setExtent(new Point(0, 0));
-            part.isBlockLabelBreak = true;
-            part.getSpec = function () {
-                return '%br';
-            };
-            break;
-        case '%inputName':
-            part = new ReporterBlockMorph();
-            part.category = 'variables';
-            part.color = BoardMorph.prototype.blockColor.variables;
-            part.setSpec(localize('Input name'));
-            break;
-        case '%s':
-            part = new InputSlotMorph();
-            break;
-        case '%anyUE':
-            part = new InputSlotMorph();
-            part.isUnevaluated = true;
-            break;
-        case '%txt':
-            part = new InputSlotMorph();
-            part.minWidth = part.height() * 1.7; // "landscape"
-            part.fixLayout();
-            break;
-        case '%mlt':
-            part = new TextSlotMorph();
-            part.fixLayout();
-            break;
-        case '%code':
-            part = new TextSlotMorph();
-            part.contents().fontName = 'monospace';
-            part.contents().fontStyle = 'monospace';
-            part.fixLayout();
-            break;
-        case '%obj':
-            part = new ArgMorph('object');
-            break;
-        case '%n':
-            part = new InputSlotMorph(null, true);
-            break;
-        case '%month':
-            part = new InputSlotMorph(
-                null, // text
-                false, // numeric?
-                {
-                    'January' : ['January'],
-                    'February' : ['February'],
-                    'March' : ['March'],
-                    'April' : ['April'],
-                    'May' : ['May'],
-                    'June' : ['June'],
-                    'July' : ['July'],
-                    'August' : ['August'],
-                    'September' : ['September'],
-                    'October' : ['October'],
-                    'November' : ['November'],
-                    'December' : ['December']
-                },
-                true // read-only
-            );
-            break;
-        case '%delim':
-            part = new InputSlotMorph(
-                null, // text
-                false, // numeric?
-                {
-                    'letter' : ['letter'],
-                    'whitespace' : ['whitespace'],
-                    'line' : ['line'],
-                    'tab' : ['tab'],
-                    'cr' : ['cr']
-                },
-                false // read-only
-            );
-            break;
-        case '%ida':
-            part = new InputSlotMorph(
-                null,
-                true,
-                {
-                    '1' : 1,
-                    last : ['last'],
-                    '~' : null,
-                    all : ['all']
-                }
-            );
-            part.setContents(1);
-            break;
-        case '%idx':
-            part = new InputSlotMorph(
-                null,
-                true,
-                {
-                    '1' : 1,
-                    last : ['last'],
-                    any : ['any']
-                }
-            );
-            part.setContents(1);
-            break;
-        case '%att':
-            part = new InputSlotMorph(
-                null,
-                false,
-                'attributesMenu',
-                true
-            );
-            break;
-        case '%fun':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    abs : ['abs'],
-                    floor : ['floor'],
-                    sqrt : ['sqrt'],
-                    sin : ['sin'],
-                    cos : ['cos'],
-                    tan : ['tan'],
-                    asin : ['asin'],
-                    acos : ['acos'],
-                    atan : ['atan'],
-                    ln : ['ln'],
-                    log : ['log'],
-                    'e^' : ['e^'],
-                    '10^' : ['10^']
-                },
-                true
-            );
-            part.setContents(['sqrt']);
-            break;
-        case '%stopChoices':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    'all' : ['all'],
-                    'this script' : ['this script'],
-                    'this block' : ['this block']
-                },
-                true
-            );
-            part.setContents(['all']);
-            part.isStatic = true;
-            break;
-        case '%stopOthersChoices':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    'all but this script' : ['all but this script'],
-                    'other scripts in sprite' : ['other scripts in sprite']
-                },
-                true
-            );
-            part.setContents(['all but this script']);
-            part.isStatic = true;
-            break;
-        case '%typ':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    number : ['number'],
-                    text : ['text'],
-                    Boolean : ['Boolean'],
-                    list : ['list'],
-                    command : ['command'],
-                    reporter : ['reporter'],
-                    predicate : ['predicate']
-                    // ring : 'ring'
-                    // object : 'object'
-                },
-                true
-            );
-            part.setContents(['number']);
-            break;
-        case '%var':
-            part = new InputSlotMorph(
-                null,
-                false,
-                'getVarNamesDict',
-                true
-            );
-            part.isStatic = true;
-            break;
-        case '%lst':
-            part = new InputSlotMorph(
-                null,
-                false,
-                {
-                    list1 : 'list1',
-                    list2 : 'list2',
-                    list3 : 'list3'
-                },
-                true
-            );
-            break;
-        case '%l':
-            part = new ArgMorph('list');
-            break;
-        case '%b':
-        case '%boolUE':
-            part = new BooleanSlotMorph(null, true);
-            break;
-        case '%cmd':
-            part = new CommandSlotMorph();
-            break;
-        case '%rc':
-            part = new RingCommandSlotMorph();
-            part.isStatic = true;
-            break;
-        case '%rr':
-            part = new RingReporterSlotMorph();
-            part.isStatic = true;
-            break;
-        case '%rp':
-            part = new RingReporterSlotMorph(true);
-            part.isStatic = true;
-            break;
-        case '%c':
-            part = new CSlotMorph();
-            part.isStatic = true;
-            break;
-        case '%cs':
-            part = new CSlotMorph(); // non-static
-            break;
-        case '%clr':
-            part = new ColorSlotMorph();
-            part.isStatic = true;
-            break;
-        case '%t':
-            part = new TemplateSlotMorph('a');
-            break;
-        case '%upvar':
-            part = new TemplateSlotMorph('\u2191'); // up-arrow
-            break;
-        case '%f':
-            part = new FunctionSlotMorph();
-            break;
-        case '%r':
-            part = new ReporterSlotMorph();
-            break;
-        case '%p':
-            part = new ReporterSlotMorph(true);
-            break;
-        case '%greenflag':
-            part = new SymbolMorph('pointRight');
-            part.size = this.fontSize * 1.5;
-            part.color = new Color(0, 200, 0);
-            part.isProtectedLabel = true; // doesn't participate in zebraing
-            part.shadowColor = this.color.darker(this.labelContrast);
-            part.shadowOffset = MorphicPreferences.isFlat ?
+            case '%digitalPin':
+                var pins = [];
+                Object.keys(BoardMorph.pinOut.digital).forEach( function(p) { pins[p] = p });
+                part = new InputSlotMorph(
+                        null, // text
+                        true, // numeric?
+                        pins,
+                        false // read-only
+                        );
+                break;
+            case '%analogPin':
+                var pins = [];
+                Object.keys(BoardMorph.pinOut.analog).forEach( function(p) { pins[p] = p });
+                part = new InputSlotMorph(
+                        null, // text
+                        true, // numeric?
+                        pins,
+                        false // read-only
+                        );
+                break;
+            case '%pwmPin':
+                var pins = [];
+                Object.keys(BoardMorph.pinOut.pwm).forEach( function(p) { pins[p] = p });
+                part = new InputSlotMorph(
+                        null, // text
+                        true, // numeric?
+                        pins,
+                        false // read-only
+                        );
+                break;
+            case '%inputs':
+                part = new MultiArgMorph('%s', 'with inputs');
+                part.isStatic = false;
+                part.canBeEmpty = false;
+                break;
+            case '%scriptVars':
+                part = new MultiArgMorph('%t', null, 1, spec);
+                part.canBeEmpty = false;
+                break;
+            case '%parms':
+                part = new MultiArgMorph('%t', 'Input Names:', 0, spec);
+                part.canBeEmpty = false;
+                break;
+            case '%ringparms':
+                part = new MultiArgMorph(
+                        '%t',
+                        'input names:',
+                        0,
+                        spec
+                        );
+                break;
+            case '%cmdRing':
+                part = new RingMorph();
+                part.color = BoardMorph.prototype.blockColor['custom blocks'];
+                part.selector = 'reifyScript';
+                part.setSpec('%rc %ringparms');
+                part.isDraggable = true;
+                break;
+            case '%repRing':
+                part = new RingMorph();
+                part.color = BoardMorph.prototype.blockColor['custom blocks'];
+                part.selector = 'reifyReporter';
+                part.setSpec('%rr %ringparms');
+                part.isDraggable = true;
+                part.isStatic = true;
+                break;
+            case '%predRing':
+                part = new RingMorph(true);
+                part.color = BoardMorph.prototype.blockColor.custom;
+                part.selector = 'reifyPredicate';
+                part.setSpec('%rp %ringparms');
+                part.isDraggable = true;
+                part.isStatic = true;
+                break;
+            case '%words':
+                part = new MultiArgMorph('%s', null, 0);
+                part.addInput(); // allow for default value setting
+                part.addInput(); // allow for default value setting
+                part.isStatic = false;
+                break;
+            case '%exp':
+                part = new MultiArgMorph('%s', null, 0);
+                part.addInput();
+                part.isStatic = true;
+                part.canBeEmpty = false;
+                break;
+            case '%br':
+                part = new Morph();
+                part.setExtent(new Point(0, 0));
+                part.isBlockLabelBreak = true;
+                part.getSpec = function () {
+                    return '%br';
+                };
+                break;
+            case '%inputName':
+                part = new ReporterBlockMorph();
+                part.category = 'variables';
+                part.color = BoardMorph.prototype.blockColor.variables;
+                part.setSpec(localize('Input name'));
+                break;
+            case '%s':
+                part = new InputSlotMorph();
+                break;
+            case '%anyUE':
+                part = new InputSlotMorph();
+                part.isUnevaluated = true;
+                break;
+            case '%txt':
+                part = new InputSlotMorph();
+                part.minWidth = part.height() * 1.7; // "landscape"
+                part.fixLayout();
+                break;
+            case '%mlt':
+                part = new TextSlotMorph();
+                part.fixLayout();
+                break;
+            case '%code':
+                part = new TextSlotMorph();
+                part.contents().fontName = 'monospace';
+                part.contents().fontStyle = 'monospace';
+                part.fixLayout();
+                break;
+            case '%obj':
+                part = new ArgMorph('object');
+                break;
+            case '%n':
+                part = new InputSlotMorph(null, true);
+                break;
+            case '%month':
+                part = new InputSlotMorph(
+                        null, // text
+                        false, // numeric?
+                        {
+                            'January' : ['January'],
+                            'February' : ['February'],
+                            'March' : ['March'],
+                            'April' : ['April'],
+                            'May' : ['May'],
+                            'June' : ['June'],
+                            'July' : ['July'],
+                            'August' : ['August'],
+                            'September' : ['September'],
+                            'October' : ['October'],
+                            'November' : ['November'],
+                            'December' : ['December']
+                        },
+                        true // read-only
+                        );
+                break;
+            case '%delim':
+                part = new InputSlotMorph(
+                        null, // text
+                        false, // numeric?
+                        {
+                            'letter' : ['letter'],
+                            'whitespace' : ['whitespace'],
+                            'line' : ['line'],
+                            'tab' : ['tab'],
+                            'cr' : ['cr']
+                        },
+                        false // read-only
+                        );
+                break;
+            case '%ida':
+                part = new InputSlotMorph(
+                        null,
+                        true,
+                        {
+                            '1' : 1,
+                            last : ['last'],
+                            '~' : null,
+                            all : ['all']
+                        }
+                        );
+                part.setContents(1);
+                break;
+            case '%idx':
+                part = new InputSlotMorph(
+                        null,
+                        true,
+                        {
+                            '1' : 1,
+                            last : ['last'],
+                            any : ['any']
+                        }
+                        );
+                part.setContents(1);
+                break;
+            case '%att':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        'attributesMenu',
+                        true
+                        );
+                break;
+            case '%fun':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            abs : ['abs'],
+                            floor : ['floor'],
+                            sqrt : ['sqrt'],
+                            sin : ['sin'],
+                            cos : ['cos'],
+                            tan : ['tan'],
+                            asin : ['asin'],
+                            acos : ['acos'],
+                            atan : ['atan'],
+                            ln : ['ln'],
+                            log : ['log'],
+                                'e^' : ['e^'],
+                                '10^' : ['10^']
+                        },
+                        true
+                        );
+                part.setContents(['sqrt']);
+                break;
+            case '%stopChoices':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            'all' : ['all'],
+                            'this script' : ['this script'],
+                            'this block' : ['this block']
+                        },
+                        true
+                        );
+                part.setContents(['all']);
+                part.isStatic = true;
+                break;
+            case '%stopOthersChoices':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            'all but this script' : ['all but this script'],
+                            'other scripts in sprite' : ['other scripts in sprite']
+                        },
+                        true
+                        );
+                part.setContents(['all but this script']);
+                part.isStatic = true;
+                break;
+            case '%typ':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            number : ['number'],
+                            text : ['text'],
+                            Boolean : ['Boolean'],
+                            list : ['list'],
+                            command : ['command'],
+                            reporter : ['reporter'],
+                            predicate : ['predicate']
+                                // ring : 'ring'
+                                // object : 'object'
+                        },
+                        true
+                        );
+                part.setContents(['number']);
+                break;
+            case '%var':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        'getVarNamesDict',
+                        true
+                        );
+                part.isStatic = true;
+                break;
+            case '%lst':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            list1 : 'list1',
+                            list2 : 'list2',
+                            list3 : 'list3'
+                        },
+                        true
+                        );
+                break;
+            case '%l':
+                part = new ArgMorph('list');
+                break;
+            case '%b':
+            case '%boolUE':
+                part = new BooleanSlotMorph(null, true);
+                break;
+            case '%cmd':
+                part = new CommandSlotMorph();
+                break;
+            case '%rc':
+                part = new RingCommandSlotMorph();
+                part.isStatic = true;
+                break;
+            case '%rr':
+                part = new RingReporterSlotMorph();
+                part.isStatic = true;
+                break;
+            case '%rp':
+                part = new RingReporterSlotMorph(true);
+                part.isStatic = true;
+                break;
+            case '%c':
+                part = new CSlotMorph();
+                part.isStatic = true;
+                break;
+            case '%cs':
+                part = new CSlotMorph(); // non-static
+                break;
+            case '%clr':
+                part = new ColorSlotMorph();
+                part.isStatic = true;
+                break;
+            case '%t':
+                part = new TemplateSlotMorph('a');
+                break;
+            case '%upvar':
+                part = new TemplateSlotMorph('\u2191'); // up-arrow
+                break;
+            case '%f':
+                part = new FunctionSlotMorph();
+                break;
+            case '%r':
+                part = new ReporterSlotMorph();
+                break;
+            case '%p':
+                part = new ReporterSlotMorph(true);
+                break;
+            case '%greenflag':
+                part = new SymbolMorph('pointRight');
+                part.size = this.fontSize * 1.5;
+                part.color = new Color(0, 200, 0);
+                part.isProtectedLabel = true; // doesn't participate in zebraing
+                part.shadowColor = this.color.darker(this.labelContrast);
+                part.shadowOffset = MorphicPreferences.isFlat ?
                     new Point() : this.embossing;
-            part.drawNew();
-            break;
-        default:
-            nop();
+                part.drawNew();
+                break;
+            default:
+                nop();
         }
     } else if (spec[0] === '$' &&
             spec.length > 1 &&
@@ -865,36 +895,36 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             part.isBold = true;
             part.shadowColor = this.color.darker(this.labelContrast);
             part.shadowOffset = MorphicPreferences.isFlat ?
-                    new Point() : this.embossing;
+                new Point() : this.embossing;
             part.drawNew();
             return part;
         }
         part = new SymbolMorph(tokens[0]);
         part.size = this.fontSize * (+tokens[1] || 1.2);
         part.color = new Color(
-            +tokens[2] === 0 ? 0 : +tokens[2] || 255,
-            +tokens[3] === 0 ? 0 : +tokens[3] || 255,
-            +tokens[4] === 0 ? 0 : +tokens[4] || 255
-        );
+                +tokens[2] === 0 ? 0 : +tokens[2] || 255,
+                +tokens[3] === 0 ? 0 : +tokens[3] || 255,
+                +tokens[4] === 0 ? 0 : +tokens[4] || 255
+                );
         part.isProtectedLabel = tokens.length > 2; // zebra colors
         part.shadowColor = this.color.darker(this.labelContrast);
         part.shadowOffset = MorphicPreferences.isFlat ?
-                new Point() : this.embossing;
+            new Point() : this.embossing;
         part.drawNew();
     } else {
         part = new StringMorph(
-            spec, // text
-            this.fontSize, // fontSize
-            this.labelFontStyle, // fontStyle
-            true, // bold
-            false, // italic
-            false, // isNumeric
-            MorphicPreferences.isFlat ?
-                    new Point() : this.embossing, // shadowOffset
-            this.color.darker(this.labelContrast), // shadowColor
-            new Color(255, 255, 230), // color
-            this.labelFontName // fontName
-        );
+                spec, // text
+                this.fontSize, // fontSize
+                this.labelFontStyle, // fontStyle
+                true, // bold
+                false, // italic
+                false, // isNumeric
+                MorphicPreferences.isFlat ?
+                new Point() : this.embossing, // shadowOffset
+                this.color.darker(this.labelContrast), // shadowColor
+                new Color(255, 255, 230), // color
+                this.labelFontName // fontName
+                );
     }
     return part;
 };

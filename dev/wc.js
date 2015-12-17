@@ -377,7 +377,7 @@ LuaExpression.prototype.reportListItem = function(index, list) {
 //// Input/Output
 
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
-    var pin = this.board.pinOut.digitalOutput[pinNumber];
+    var pin = BoardMorph.pinOut.digital[pinNumber];
     // pio.OUTPUT is 0
     this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r'
 }
@@ -385,7 +385,7 @@ LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
 LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
-    var pin = this.board.pinOut.digitalInput[pinNumber];
+    var pin = BoardMorph.pinOut.digital[pinNumber];
     this.code = '(function() pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
 }
 
@@ -395,7 +395,7 @@ LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
 
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
-    var pin = this.board.pinOut.analogInput[pinNumber];
+    var pin = BoardMorph.pinOut.analog[pinNumber];
     this.code = '(function() a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
 }
 

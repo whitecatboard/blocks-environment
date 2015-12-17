@@ -263,26 +263,26 @@ BoardMorph.prototype.initBlocks = function () {
         setPinDigital: {
             type: 'command',
             category: 'input / output',
-            spec: 'set pin %n to digital %s',
-            defaults: [1, true]
+            spec: 'set pin %digitalPin to digital %s',
+            defaults: [15, true]
         },
         setPinAnalog: {
             type: 'command',
             category: 'input / output',
-            spec: 'set pin %n to analog %s',
-            defaults: [4, 128]
+            spec: 'set pin %pwmPin to analog %s',
+            defaults: [10, 128]
         },
         getPinDigital: {
             type: 'reporter',
             category: 'input / output',
-            spec: 'get digital value from pin %n',
-            defaults: [5]
+            spec: 'get digital value from pin %digitalPin',
+            defaults: [16]
         },
         getPinAnalog: {
             type: 'reporter',
             category: 'input / output',
-            spec: 'get analog value from pin %n',
-            defaults: [6]
+            spec: 'get analog value from pin %analogPin',
+            defaults: [11]
         },
         // Comm
         subscribeToMQTTmessage: {
@@ -386,6 +386,11 @@ BoardMorph.prototype.init = function (ide) {
     this.serialLib = require('serialport');
     this.SerialPort = this.serialLib.SerialPort;
 
+    // PinOut depends on the board
+    // For now we're supporting the WhiteCat board, but adding a menu
+    // option for other boards is trivial
+    this.loadPinOut('whitecat');
+
     if (!this.serialPort) { this.serialConnect() };
 
     BoardMorph.uber.init.call(this);
@@ -469,11 +474,6 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
                 myself.serialPort.close(function() { myself.serialConnect() });
             });
         });
-
-        // PinOut depends on the board
-        // For now we're supporting the WhiteCat board, but adding a menu
-        // option for other boards is trivial
-        this.loadPinOut('whitecat');
     }
 };
 
@@ -571,7 +571,7 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
                 + boardName + ' board. Input / output blocks\nare not going to work!');
         } else {
             try {
-                myself.pinOut = JSON.parse(data);
+                BoardMorph.pinOut = JSON.parse(data);
             } catch (error) {
                 myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not parse pinout specs file for\n' 
                     + boardName + ' board. Input / output blocks\nare not going to work!');
