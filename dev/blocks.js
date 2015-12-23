@@ -2335,7 +2335,10 @@ BlockMorph.prototype.thumbnail = function (scale, clipWidth) {
 // Thread updating
 
 BlockMorph.prototype.updateThread = function () {
-    if (this.topBlock().getHighlight()) {
+    // All postal service blocks should always be pushed to the board
+    if (!this.isTemplate 
+            && (this.topBlock().getHighlight() 
+            || this.topBlock().selector === 'subscribeToMQTTmessage')) {
         this.receiver().buildThreads([this.topBlock()]);
     }
 };
@@ -5745,7 +5748,7 @@ InputSlotMorph.prototype.arrow = function () {
     );
 };
 
-InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
+InputSlotMorph.prototype.setContents = function (aStringOrFloat, buildingDefaults) {
     var cnts = this.contents(),
         dta = aStringOrFloat,
         isConstant = dta instanceof Array;
@@ -5770,7 +5773,7 @@ InputSlotMorph.prototype.setContents = function (aStringOrFloat) {
     if (this.isReadOnly && (this.parent instanceof BlockMorph)) {
         this.parent.fixLabelColor();
     }
-    if (this.parent instanceof BlockMorph) {
+    if (this.parent instanceof BlockMorph && !buildingDefaults) {
         this.parent.updateThread();
     }
 

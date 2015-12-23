@@ -130,7 +130,6 @@ Thread.prototype.setBody = function(body) {
 
 Thread.prototype.updateBody = function(body) {
     this.setBody(body);
-    this.body += this.stop();
 }
 
 Thread.prototype.wrap = function(body) {
@@ -138,7 +137,7 @@ Thread.prototype.wrap = function(body) {
 }
 
 Thread.prototype.start = function() {
-    return 'thread.start(t' + this.id + ')\r'
+    return 't_' + this.id + ' = thread.start(t' + this.id + ')\r'
 }
 /*
 Thread.prototype.suspend = function() {
@@ -400,17 +399,26 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
 }
 
 //// Comm
+
+LuaExpression.prototype.assertInternet = function() {
+    return 'if (not cfg.i) then cfg.i = net.start("en") end\r'
+}
+
+LuaExpression.prototype.assertMQTT = function() {
+    return this.assertInternet() + 'if (cfg.m == nil) then ' + this.board.mqttConnectionCode() + ' end\r';
+}
+
 LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
+    if (!body) { return };
     this.code 
-        = 'if (m == nil) then ' + this.board.mqttConnectionCode() + ' end m:subscribe(' + luaAutoEscape(topic) 
+        = 'print("dt:' + this.topBlock.thread.id + ':"); ' + this.assertMQTT() + 'cfg.m:subscribe(' + luaAutoEscape(topic) 
         + ', mqtt.QOS0, (function(l, p) if (p == ' + luaAutoEscape(message)
-        + ') then print("rc:' + this.topBlock.thread.id + ':"..p);'
-        + body + ' print("dc:' + this.topBlock.thread.id + ':"..p); end end))\r';
+        + ') then print("rt:' + this.topBlock.thread.id + ':"..p);' + body + 'print("dt:' + this.topBlock.thread.id + ':"..p); end end))\r';
 }
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
     this.code
-        = 'if (m == nil) do ' + this.board.mqttConnectionCode() + ' end m:publish(' + luaAutoEscape(topic) 
+        = this.assertMQTT() + 'cfg.m:publish(' + luaAutoEscape(topic) 
         + ', ' + luaAutoEscape(message) + ', mqtt.QOS0)\r'
 }
 
