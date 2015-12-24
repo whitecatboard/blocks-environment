@@ -458,7 +458,7 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
                 });
 
         this.serialPort.on('open', function (err) {
-            if (err) { console.log(err) };
+            if (err) { log(err) };
             myself.startUp();
             myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
             myself.startUpInterval = 
@@ -481,16 +481,16 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
     var myself = this;
     if (data === 'C') {
         // We've been given permission to send the next chunk of a script (_C_hunk)
-        console.log('→ next chunk please');
+        log('→ next chunk please');
         if (this.outputData) {
             if (this.outputIndex >= this.outputData.length) {
-                console.log('← all done');
+                log('← all done');
                 // we're done
                 this.outputData = null;
                 this.outputIndex = 0;
-                var buffer = new Buffer(28);
+                var buffer = new Buffer(30);
                 buffer[0] = 0;
-                buffer.write('\rdofile("/sd/autorun.lua")\r', 1);
+                buffer.write('\r\ndofile("/sd/autorun.lua")\r\n', 1);
                 this.serialWrite(buffer);
             } else {
                 var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 254),
@@ -499,7 +499,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 buffer[0] = chunk.length;
                 buffer.write(chunk, 1);
 
-                console.log('← sending a ' + chunk.length + ' bytes long chunk');
+                log('← sending a ' + chunk.length + ' bytes long chunk');
 
                 this.serialWrite(buffer);
 
@@ -532,7 +532,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             // This thread may not exist anymore
             if (thread) { thread.topBlock.addHighlight(thread.topBlock.removeHighlight()) };
         } catch(err) {
-            console.log(err);
+            log(err);
         }
     } else if (data.search('dt:') > -1) {
         // It's a dead thread and its corresponding stack should be un-highlighted
@@ -544,7 +544,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 thread.topBlock.removeHighlight();
             };
         } catch (err) {
-            console.log(err);
+            log(err);
         }
     } else if (this.startUpInterval && data.slice(data.length - 3, data.length - 2) === '>') {
         clearInterval(this.startUpInterval);
@@ -556,7 +556,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             }, 
             1000);
     } else {
-        console.log(data);
+        log(data);
     }
 };
 
@@ -565,9 +565,9 @@ BoardMorph.prototype.serialWrite = function(data) {
 
     if (this.serialPort.writing) {
         this.serialPort.writeAttempts += 1;
-        console.log('retry serial write: ' + this.serialPort.writeAttempts + ' time');
+        log('retry serial write: ' + this.serialPort.writeAttempts + ' time');
         if (this.serialPort.writeAttempts > 10) {
-            console.log('I am done retrying. Please reset the board...');
+            log('I am done retrying. Please reset the board...');
             return;
         };
         this.serialWrite(data);
@@ -602,24 +602,24 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.suspendAll = function() {
-    this.serialWrite('thread.suspend()\r');
+    this.serialWrite('thread.suspend()\r\n');
 }
 
 BoardMorph.prototype.resumeAll = function() {
-    this.serialWrite('thread.resume()\r');
+    this.serialWrite('thread.resume()\r\n');
 }
 
 BoardMorph.prototype.startUp = function() {
-    this.serialWrite('\r\r');
+    this.serialWrite('\r\n\r\n');
 }
 
 BoardMorph.prototype.stopAll = function() {
     this.outputData = null;
-    this.serialWrite('thread.stop()\r');
+    this.serialWrite('thread.stop()\r\n');
 }
 
 BoardMorph.prototype.reset = function() {
-    //this.serialWrite('thread.stop();os.exit()\r');
+    //this.serialWrite('thread.stop();os.exit()\r\n');
     this.stopAll();
 }
 
@@ -632,19 +632,19 @@ BoardMorph.prototype.threadForBlock = function(topBlock, topBlocksToRun) {
     if (topBlock.thread && contains(topBlocksToRun, topBlock)) {
         topBlock.thread.setBody(new LuaExpression(topBlock, this));
         thread = topBlock.thread;
-        console.log('I am updating thread ' + thread.id);
+        log('I am updating thread ' + thread.id);
     } else if (!topBlock.thread) {
         if (this.threads.length > 0) {
             id = this.threads[this.threads.length - 1].id + 1;
         }
-        console.log('I am creating thread ' + id);
+        log('I am creating thread ' + id);
         thread = new Thread(id, topBlock);
         topBlock.thread = thread;
         thread.setBody(new LuaExpression(topBlock, this));
         this.addThread(thread);
     } else {
         thread = topBlock.thread;
-        console.log('I found thread ' + thread.id + ' but I am not changing it');
+        log('I found thread ' + thread.id + ' but I am not changing it');
     }
 
     return thread;
@@ -665,13 +665,13 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
     // Add all that to autorun.lua so it's persistent upon reset
 
     if (this.outputData) { 
-        console.log('calm down...');
+        log('calm down...');
         return;
     };
 
     var myself = this;
 
-    this.outputData = 'if (not globals) then globals = {} end\rif (not cfg) then cfg = {} end\rthread.stop()\r';
+    this.outputData = 'if (not globals) then globals = {} end\r\nif (not cfg) then cfg = {} end\r\nthread.stop()\r\n';
     this.outputIndex = 0;
 
     this.scripts.children.forEach(function(topBlock) {
@@ -691,7 +691,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
             };
     })
 
-    console.log('← sending ' + this.outputData.length + ' bytes');
+    log('← sending ' + this.outputData.length + ' bytes');
 
     require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
 
@@ -702,7 +702,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
 
 BoardMorph.prototype.getReporterResult = function (block) {
     this.reporterBlock = block;
-    this.serialWrite('print("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r');
+    this.serialWrite('print("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r\n');
 }
 
 // Variables
@@ -797,7 +797,7 @@ BoardMorph.prototype.variableBlock = function (varName) {
 BoardMorph.prototype.mqttConnectionCode = function() {
     return ('cfg.m = mqtt.client("' 
             + this.broker.deviceID + '", "' + this.broker.url + '", ' + this.broker.port + ', false); cfg.m:connect("' 
-            + this.broker.username + '","' + this.broker.password + '");\r');
+            + this.broker.username + '","' + this.broker.password + '");\r\n');
 }
 
 // BoardMorph versioning
