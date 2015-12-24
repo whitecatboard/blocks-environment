@@ -3,4 +3,4 @@ Please see [http://bromagosa.github.io/WhiteCat/](http://bromagosa.github.io/Whi
 --
 
 ## Experimental releases
-[Win32](vps34736.ovh.net/whitecat/WhiteCat-win32.zip) - [Drivers](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx)
+[Win32](http://vps34736.ovh.net/whitecat/WhiteCat-win32.zip) - [Drivers](https://www.silabs.com/products/mcu/Pages/USBtoUARTBridgeVCPDrivers.aspx)
