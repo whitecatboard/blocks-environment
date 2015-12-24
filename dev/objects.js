@@ -486,6 +486,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             if (this.outputIndex >= this.outputData.length) {
                 log('← all done');
                 // we're done
+                this.previousData = this.outputData;
                 this.outputData = null;
                 this.outputIndex = 0;
                 var buffer = new Buffer(30);
@@ -602,11 +603,11 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
 }
 
 BoardMorph.prototype.suspendAll = function() {
-    this.serialWrite('thread.suspend()\r\n');
+    this.serialWrite('thread.suspend()\r\n');
 }
 
 BoardMorph.prototype.resumeAll = function() {
-    this.serialWrite('thread.resume()\r\n');
+    this.serialWrite('thread.resume()\r\n');
 }
 
 BoardMorph.prototype.startUp = function() {
@@ -615,7 +616,8 @@ BoardMorph.prototype.startUp = function() {
 
 BoardMorph.prototype.stopAll = function() {
     this.outputData = null;
-    this.serialWrite('thread.stop()\r\n');
+    this.previousData = null;
+    this.serialWrite('thread.stop()\r\n');
 }
 
 BoardMorph.prototype.reset = function() {
@@ -664,11 +666,6 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
     // Fire up the threads that correspond with topBlocksToRun
     // Add all that to autorun.lua so it's persistent upon reset
 
-    if (this.outputData) { 
-        log('calm down...');
-        return;
-    };
-
     var myself = this;
 
     this.outputData = 'if (not globals) then globals = {} end\r\nif (not cfg) then cfg = {} end\r\nthread.stop()\r\n';
@@ -691,12 +688,17 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
             };
     })
 
+    if (this.outputData == this.previousData) { return }; 
+
     log('← sending ' + this.outputData.length + ' bytes');
 
-    require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
+    if (debugMode && process.platform == 'linux') {
+        require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
+    }
 
     // We start writing
     // BoardMorph.prototype.parseSerialResponse takes over
+
     this.serialWrite('\rio.receive("/sd/autorun.lua")\r');
 }
 
