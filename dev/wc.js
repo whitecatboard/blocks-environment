@@ -386,7 +386,8 @@ LuaExpression.prototype.reportListItem = function(index, list) {
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.digital[pinNumber];
     // pio.OUTPUT is 0
-    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r\n'
+    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r\n';
+    this.board.updatePinConfig(pinNumber, 'o', 'd');
 };
 
 LuaExpression.prototype.getPinDigital = function(pinNumber) {
@@ -394,16 +395,19 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // pio.INPUT is 1
     var pin = BoardMorph.pinOut.digital[pinNumber];
     this.code = '(function() pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
+    this.board.updatePinConfig(pinNumber, 'i', 'd');
 };
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
     // ToDo when we have PWM
+    this.board.updatePinConfig(pinNumber, 'o', 'a');
 };
 
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
     var pin = BoardMorph.pinOut.analog[pinNumber];
     this.code = '(function() a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
+    this.board.updatePinConfig(pinNumber, 'i', 'a');
 };
 
 //// Comm

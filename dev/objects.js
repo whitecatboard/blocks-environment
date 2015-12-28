@@ -388,13 +388,124 @@ BoardMorph.prototype.init = function (ide) {
 
     // PinOut depends on the board
     // For now we're supporting the WhiteCat board, but adding a menu
-    // option for other boards is trivial
+    // option for other boards is easy.
     this.loadPinOut('whitecat');
 
     if (!this.serialPort) { this.serialConnect() };
 
     BoardMorph.uber.init.call(this);
+
+    this.fixLayout();
 };
+
+BoardMorph.prototype.fixLayout = function() {
+    var myself = this,
+        fieldWidth,
+        column = 0,
+        row = 1;
+
+    if (this.pinMorphs) {
+        this.pinMorphs.forEach(function(m) { m.destroy() });
+    }
+
+    this.pinMorphs = [];
+
+    this.setWidth(194);
+    this.setHeight(260);
+    this.setColor(new Color(0, 0, 0, 0));
+
+    fieldWidth = 92;
+
+    if (!BoardMorph.pinOut) { return };
+
+    var pins = Object.keys(BoardMorph.pinOut.digital);
+
+    pins.forEach(function(pin) {
+        var field = new Morph();
+
+        field.pinNumber = pin;
+
+        field.setColor(new Color(250,250,10));
+        field.setWidth(fieldWidth);
+        field.setHeight(14);
+        field.setLeft(myself.left() + column * fieldWidth + column * 5 + 2);
+        field.setTop(myself.top() + row * 16 + 2);
+
+        field.label = new TextMorph(pin);
+        field.label.setTop(field.top());
+        field.label.setLeft(field.left() + 20);
+        field.add(field.label);
+
+        var configHolder = new Morph();
+        configHolder.setPosition(field.position());
+        configHolder.setColor(new Color(255,255,255));
+        configHolder.setWidth(16);
+        configHolder.setHeight(16);
+        field.config = new TextMorph('? -');
+        field.config.setPosition(configHolder.position());
+        configHolder.add(field.config);
+        field.add(configHolder);
+
+        field.updateConfig = function(isInput, isAnalog) {
+            var content = isAnalog ? 'A' : 'D';
+            content += isInput ? '→' : '←';
+            field.config.text = content;
+            field.config.changed();
+            field.config.drawNew();
+            field.config.changed();
+        }
+
+        field.valueHolder = new Morph();
+        field.valueHolder.setTop(field.top());
+        field.valueHolder.setLeft(field.left() + 38);
+        field.valueHolder.setWidth(field.width() - 38);
+        field.valueHolder.setHeight(field.height());
+        field.valueHolder.setColor(new Color(255,255,255));
+        field.value = new TextMorph('-');
+        field.value.setTop(field.valueHolder.top());
+        field.value.setLeft(field.valueHolder.left() + 2);
+        field.valueHolder.add(field.value);
+        field.add(field.valueHolder);
+
+        field.updateValue = function(value) {
+            if (value === true) {
+                field.valueHolder.setColor(new Color(0,250,0));
+                field.value.text = '';
+            } else if (value === false) {
+                field.valueHolder.setColor(new Color(250,0,0));
+                field.value.text = '';
+            } else {
+                field.valueHolder.setColor(new Color(255,255,255));
+                field.value.text = value;
+            }
+            field.value.changed();
+            field.value.drawNew();
+            field.value.changed();
+        }
+
+        myself.pinMorphs.push(field);
+        myself.add(field);
+        row ++;
+        if (pin == 21) {
+            row = 0;
+            column ++;
+        }
+    })
+
+    this.updatePinConfig = function(pin, inputOrOutput, analogOrDigital) {
+        var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
+        if (watcher) {
+            watcher.updateConfig(inputOrOutput === 'i', analogOrDigital === 'a');
+        }
+    }
+
+    this.updatePinValue = function(pin, value) {
+        var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
+        if (watcher) {
+            watcher.updateValue(value);
+        }
+    }
+}
 
 BoardMorph.prototype.findThread = function(id) {
     return detect(this.threads, function(thread) { return thread.id === id });
@@ -594,6 +705,7 @@ BoardMorph.prototype.loadPinOut = function(boardName) {
         } else {
             try {
                 BoardMorph.pinOut = JSON.parse(data);
+                myself.fixLayout();
             } catch (error) {
                 myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not parse pinout specs file for\n' 
                     + boardName + ' board. Input / output blocks\nare not going to work!');
@@ -1401,27 +1513,6 @@ BoardMorph.prototype.searchBlocks = function (
 // BoardMorph primitives
 
 // BoardMorph message broadcasting
-
-BoardMorph.prototype.allMessageNames = function () {
-    var msgs = [];
-    this.scripts.allChildren().forEach(function (morph) {
-        var txt;
-        if (morph.selector) {
-            if (contains(
-                    ['receiveMessage', 'doBroadcast', 'doBroadcastAndWait'],
-                    morph.selector
-                )) {
-                txt = morph.inputs()[0].evaluate();
-                if (isString(txt) && txt !== '') {
-                    if (!contains(msgs, txt)) {
-                        msgs.push(txt);
-                    }
-                }
-            }
-        }
-    });
-    return msgs;
-};
 
 BoardMorph.prototype.allHatBlocksFor = function (message) {
     return this.scripts.children.filter(function (morph) {

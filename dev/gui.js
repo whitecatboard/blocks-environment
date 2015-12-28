@@ -529,6 +529,8 @@ IDE_Morph.prototype.createStatusBar = function () {
     this.statusBar.setWidth(this.palette.width() - 2);
     this.add(this.statusBar);
     this.statusBar.add(this.board);
+    this.board.setTop(this.statusBar.top());
+    this.board.setLeft(this.statusBar.left() + 2);
 }
 
 // IDE_Morph layout
