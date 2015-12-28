@@ -155,7 +155,8 @@ IDE_Morph.prototype.buildPanes = function () {
     this.createBoard();
     this.createCategories();
     this.createPalette();
-    this.createBoardEditor();
+    this.createEditor();
+    this.createStatusBar();
 };
 
 IDE_Morph.prototype.createLogo = function () {
@@ -366,9 +367,7 @@ IDE_Morph.prototype.createControlBar = function () {
 IDE_Morph.prototype.createBoard = function () {
     if (!this.board) { 
         this.board = new BoardMorph(this);
-        this.add(this.board)
     };
-    this.board.hide();
 }
 
 IDE_Morph.prototype.createCategories = function () {
@@ -495,7 +494,7 @@ IDE_Morph.prototype.createPalette = function (forSearching) {
     return this.palette;
 };
 
-IDE_Morph.prototype.createBoardEditor = function () {
+IDE_Morph.prototype.createEditor = function () {
     var scripts = this.board.scripts,
         myself = this;
 
@@ -524,6 +523,13 @@ IDE_Morph.prototype.createBoardEditor = function () {
     this.scriptEditor.scrollY(this.scriptEditor.padding);
 };
 
+IDE_Morph.prototype.createStatusBar = function () {
+    this.statusBar = new Morph();
+    this.statusBar.color = this.frameColor;
+    this.statusBar.setWidth(this.palette.width() - 2);
+    this.add(this.statusBar);
+    this.statusBar.add(this.board);
+}
 
 // IDE_Morph layout
 
@@ -548,7 +554,7 @@ IDE_Morph.prototype.fixLayout = function (situation) {
             this.scriptEditor.setTop(this.categories.top() + 1);
             this.scriptEditor.setLeft(this.categories.right() + 1);
             this.scriptEditor.setExtent(new Point(
-                this.width() -  this.categories.width(),
+                this.width() -  this.categories.width() * 2,
                 this.bottom() - this.scriptEditor.top()
             ));
         }
@@ -559,6 +565,11 @@ IDE_Morph.prototype.fixLayout = function (situation) {
     this.palette.setLeft(this.logo.left());
     this.palette.setTop(this.categories.bottom());
     this.palette.setHeight(this.bottom() - this.palette.top());
+
+    // statusBar
+    this.statusBar.setTop(this.controlBar.bottom());
+    this.statusBar.setRight(this.right());
+    this.statusBar.setHeight(this.bottom() - this.controlBar.bottom());
 
     Morph.prototype.trackChanges = true;
     this.changed();
