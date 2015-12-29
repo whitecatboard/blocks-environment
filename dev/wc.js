@@ -383,10 +383,14 @@ LuaExpression.prototype.reportListItem = function(index, list) {
 
 //// Input/Output
 
+LuaExpression.prototype.setDigitalPinConfig = function(pin, direction) {
+    return 'if (cfg.p["' + pin + '"] == nil or cfg.p["' + pin + '"][1] ~= "d" or cfg.p["' + pin + '"][2] ~= ' + direction + ') then cfg.p["' + pin + '"] = {"d", ' + direction + '}; pio.pin.setdir(' + direction + ', pio.' + pin + '); end\r\n'
+}
+
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.digital[pinNumber];
     // pio.OUTPUT is 0
-    this.code = 'pio.pin.setdir(0, pio.' + pin + '); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r\n';
+    this.code =  this.setDigitalPinConfig(pin, 0) + 'print("pv:' + pinNumber + ':"..' + toLuaDigital(value) +'); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'd');
 };
 
@@ -394,19 +398,20 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
     var pin = BoardMorph.pinOut.digital[pinNumber];
-    this.code = '(function() pio.pin.setdir(1, pio.' + pin + '); return pio.pin.getval(pio.' + pin + ') end)()'
     this.board.updatePinConfig(pinNumber, 'i', 'd');
+    this.code = '(function() ' + this.setDigitalPinConfig(pin, 1) + ' local v = pio.pin.getval(pio.' + pin + '); print("pv:' + pinNumber + ':"..v); return v; end)()\r\n'
 };
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
-    // ToDo when we have PWM
+    var pin = BoardMorph.pinOut.pwm[pinNumber];
+    this.code = 'local v = ' + toLuaNumber(value) + '; pwm.setup(' + pin + ', pwm.DAC, 8, v); print("pv:' + pinNumber + ':"..v); pwm.start(' + pin + ');\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'a');
 };
 
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
     var pin = BoardMorph.pinOut.analog[pinNumber];
-    this.code = '(function() a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); return v:read(); end)()'
+    this.code = '(function() a = adc.setup(adc.ADC1, adc.AVDD, 3220); local v = a:setupchan(12, ' + pin + '); v=v:read(); print("pv:' + pinNumber + ':"..v); return v; end)()'
     this.board.updatePinConfig(pinNumber, 'i', 'a');
 };
 

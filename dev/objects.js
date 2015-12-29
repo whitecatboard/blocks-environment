@@ -491,19 +491,22 @@ BoardMorph.prototype.fixLayout = function() {
             column ++;
         }
     })
+}
 
-    this.updatePinConfig = function(pin, inputOrOutput, analogOrDigital) {
-        var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
-        if (watcher) {
-            watcher.updateConfig(inputOrOutput === 'i', analogOrDigital === 'a');
-        }
+BoardMorph.prototype.updatePinConfig = function(pin, inputOrOutput, analogOrDigital) {
+    var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
+    if (watcher) {
+        watcher.updateConfig(inputOrOutput === 'i', analogOrDigital === 'a');
     }
+}
 
-    this.updatePinValue = function(pin, value) {
-        var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
-        if (watcher) {
-            watcher.updateValue(value);
+BoardMorph.prototype.updatePinValue = function(pin, value) {
+    var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
+    if (watcher) {
+        if (watcher.config.text.slice(0,1) === 'D') {
+            value = value == 1;
         }
+        watcher.updateValue(value);
     }
 }
 
@@ -658,15 +661,19 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             log(err);
         }
-    } else if (this.startUpInterval && data.slice(data.length - 3, data.length - 2) === '>') {
+    } else if (data.slice(0,2) === 'pv') {
+        // We're getting pin values back
+        try {
+            var pin = data.match(/^pv:(.*?):/, '$1')[1],
+                contents = data.match(/^pv:.*?:(.*)/, '$1')[1];
+            this.updatePinValue(pin, contents);
+        } catch (err) {
+            log(err);
+        }
+    } else if (this.startUpInterval && data.search('>') > -1) {
         clearInterval(this.startUpInterval);
         this.startUpInterval = null;
         myself.ide.showMessage('Board ready.', 2);
-        myself.pushInterval = 
-            setInterval(function() {
-                // should update...
-            }, 
-            1000);
     } else {
         log(data);
     }
@@ -780,7 +787,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
 
     var myself = this;
 
-    this.outputData = 'if (not globals) then globals = {} end\r\nif (not cfg) then cfg = {} end\r\nthread.stop()\r\n';
+    this.outputData = 'if (not globals) then globals = {} end\r\nif (not cfg) then cfg = {}; cfg.p = {} end\r\nthread.stop()\r\n';
     this.outputIndex = 0;
 
     this.scripts.children.forEach(function(topBlock) {
