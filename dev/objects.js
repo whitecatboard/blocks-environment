@@ -448,7 +448,7 @@ BoardMorph.prototype.fixLayout = function() {
 
         field.updateConfig = function(isInput, isAnalog) {
             var content = isAnalog ? 'A' : 'D';
-            content += isInput ? '→' : '←';
+            content += isInput ? '►' : '◄';
             field.config.text = content;
             field.config.changed();
             field.config.drawNew();
@@ -670,9 +670,20 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             log(err);
         }
+    } else if (data.slice(0,2) === 'vv') {
+        // We're getting variable values back
+        try {
+            var varName = data.match(/^vv:(.*?):/, '$1')[1],
+                contents = data.match(/^vv:.*?:(.*)/, '$1')[1];
+            this.setVariableWatcherValue(varName, contents);
+        } catch (err) {
+            log(err);
+        }
     } else if (this.startUpInterval && data.search('>') > -1) {
         clearInterval(this.startUpInterval);
         this.startUpInterval = null;
+        // INTERVAL for reading inputs:
+        // for key in pairs(cfg.p) do if (cfg.p[key][2] == 1) then print(key) end end end)(); if (f) then print(\"pb:2:\" .. f) end;\r\n
         myself.ide.showMessage('Board ready.', 2);
     } else {
         log(data);
@@ -850,6 +861,16 @@ BoardMorph.prototype.findVariableWatcher = function (varName) {
                     && morph.getter === varName;
         }
     );
+};
+
+BoardMorph.prototype.setVariableWatcherValue = function (varName, value) {
+    var watcher = this.findVariableWatcher(varName);
+    if (watcher) {
+        watcher.cellMorph.contents = value;
+        watcher.changed();
+        watcher.cellMorph.drawNew();
+        watcher.fixLayout();
+    }
 };
 
 BoardMorph.prototype.toggleVariableWatcher = function (varName) {
