@@ -823,7 +823,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
 
     log('← sending ' + this.outputData.length + ' bytes');
 
-    if (debugMode && process.platform == 'linux') {
+    if (debugMode && process.platform != 'win32') {
         require('fs').writeFileSync('/tmp/autorun.lua', this.outputData);
     }
 
