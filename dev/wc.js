@@ -354,11 +354,13 @@ LuaExpression.prototype.runLua = function(code) {
 //// Data
 
 LuaExpression.prototype.doSetVar = function(varName, value) {
-    this.code = 'local v = ' + luaAutoEscape(value) + '; globals.' + varName + ' = v; print("\\r\\nvv:' + varName + ':"..tostring(v).."\\r\\n")\r\n';
+    this.code = 'local v = ' + luaAutoEscape(value) + '; globals.' + varName + ' = v; print("\\r\\nvv:'
+            + varName + ':"..tostring(v).."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
-    this.code = 'globals.' + varName + ' = globals.' + varName + ' + ' + delta + '\r\n';
+    this.code = 'globals.' + varName + ' = globals.' + varName + ' + ' + delta
+        + '; print("\\r\\nvv:' + varName + ':"..tostring(globals.' + varName + ').."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.reportGetVar = function() {

@@ -577,7 +577,8 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
             myself.startUpInterval = 
                 setInterval(function() {
-                    myself.ide.showModalMessage('Waiting for board to be ready...\n' + randomFace());
+                    myself.ide.showModalMessage('Waiting for board to be ready...\n' + randomFace()
+                            + '\nIf this takes too long, try resetting the board\nby connecting P04 (GND) and P05 (MCLR) together.');
                     myself.startUp() 
                 }, 
                 2000);
