@@ -8,6 +8,8 @@ Please note you need to download and install drivers for Win32 and MacOSX versio
 
 [GNU/Linux 64b](http://vps34736.ovh.net/whitecat/WhiteCat-gnu64.zip)
 
+[GNU/Linux 32b](http://vps34736.ovh.net/whitecat/WhiteCat-gnu32.zip)
+
 [Win32](http://vps34736.ovh.net/whitecat/WhiteCat-win32.zip) - [Drivers](https://www.silabs.com/Support%20Documents/Software/CP210x_VCP_Windows.zip)
 
 [OSX](http://vps34736.ovh.net/whitecat/WhiteCat-osx.zip) - [Drivers](https://www.silabs.com/Support%20Documents/Software/Mac_OSX_VCP_Driver.zip)
