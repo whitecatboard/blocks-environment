@@ -2250,14 +2250,7 @@ BlockMorph.prototype.mouseClickLeft = function () {
         return top.mouseClickLeft();
     }
     if (board) {
-        /* We take ALL scripts in the scripting area and translate them into Lua.
-         * Each script maps to a thread.
-         * buildThreads() pushes it all to the board and tells it to fire the
-         * thread that "top" holds.
-         */
-        var blocksToRun = board.allHatBlocksFor('__postal__service__');
-        blocksToRun.push(top);
-        board.buildThreads(blocksToRun);
+        board.buildThreads([top], true);
     }
 
 };

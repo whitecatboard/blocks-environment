@@ -637,7 +637,7 @@ IDE_Morph.prototype.pressStart = function () {
 };
 
 IDE_Morph.prototype.fireGreenFlagEvent = function () {
-    this.board.buildThreads(this.board.allHatBlocksFor('__shout__go__').concat(this.board.allHatBlocksFor('__postal__service__')));
+    this.board.buildThreads(this.board.allHatBlocksFor('__shout__go__').concat(this.board.allHatBlocksFor('__postal__service__')), true);
 };
 
 IDE_Morph.prototype.fireStopAllEvent = function () {

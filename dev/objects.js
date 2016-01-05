@@ -264,7 +264,7 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'input / output',
             spec: 'set pin %digitalPin to digital %s',
-            defaults: [15, true]
+            defaults: [14, true]
         },
         setPinAnalog: {
             type: 'command',
@@ -402,7 +402,7 @@ BoardMorph.prototype.fixLayout = function() {
     var myself = this,
         fieldWidth,
         column = 0,
-        row = 1;
+        row = 2;
 
     if (this.pinMorphs) {
         this.pinMorphs.forEach(function(m) { m.destroy() });
@@ -485,10 +485,16 @@ BoardMorph.prototype.fixLayout = function() {
 
         myself.pinMorphs.push(field);
         myself.add(field);
-        row ++;
+
+        if (pin < 21) { 
+            row ++;
+        } else {
+            row --;
+        }
+
         if (pin == 21) {
-            row = 0;
             column ++;
+            row += 3;
         }
     })
 }
@@ -792,7 +798,7 @@ BoardMorph.prototype.clearThreads = function() {
     this.threads = [];
 }
 
-BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
+BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
     // Build all threads based on the block stacks on the scripts canvas
     // Fire up the threads that correspond with topBlocksToRun
     // Add all that to autorun.lua so it's persistent upon reset
@@ -813,13 +819,15 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun) {
         // If the thread is already there, we'll update it
         var thread = myself.threadForBlock(topBlock, topBlocksToRun);
             myself.outputData += thread.body;
-            myself.outputData += thread.start();
+            if (contains(topBlocksToRun, topBlock) || topBlock.getHighlight()) { 
+                myself.outputData += thread.start();
+            };
             if (!topBlock.getHighlight() && !topBlock.selector == 'subscribeToMQTTmessage') {
                 topBlock.addHighlight()
             };
     })
 
-    if (this.outputData == this.previousData) { return }; 
+    if (this.outputData == this.previousData && !forceRun) { return }; 
 
     log('← sending ' + this.outputData.length + ' bytes');
 
@@ -899,9 +907,9 @@ BoardMorph.prototype.toggleVariableWatcher = function (varName) {
         varName // getter
     );
     watcher.setPosition(this.scripts.position().add(10));
-    others = this.scripts.watchers(watcher.left());
+    others = this.scripts.watchers();
     if (others.length > 0) {
-        watcher.setTop(others[others.length - 1].bottom());
+        watcher.setTop(others[others.length - 1].bottom() + 5);
     }
     this.scripts.add(watcher);
     watcher.fixLayout();
