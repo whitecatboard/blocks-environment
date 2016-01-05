@@ -100,6 +100,8 @@ function luaAutoEscape(something) {
         return something;
     } else if (typeof something === 'string') { 
         return '"' + luaEscape(something) + '"';
+    } else if (typeof(something) === 'object') {
+        return something;
     } else {
         return 'tostring(' + something + ')';
     }
@@ -199,6 +201,9 @@ LuaExpression.prototype.init = function(topBlock, board) {
         } else if (input instanceof MultiArgMorph) {
             // If it's a variadic input, let's recursively traverse its inputs
             input.inputs().forEach(function(each) { translateInput(each) });
+        } else if (input instanceof TemplateSlotMorph) {
+            // It it's an upVar, let's take the variable name as an argument
+            args.push(input.contents());
         } else {
             // Otherwise, it's a reporter, so we need to translate it into a LuaExpression 
             args.push(new LuaExpression(input, board));
@@ -354,17 +359,21 @@ LuaExpression.prototype.runLua = function(code) {
 //// Data
 
 LuaExpression.prototype.doSetVar = function(varName, value) {
-    this.code = 'local v = ' + luaAutoEscape(value) + '; globals.' + varName + ' = v; print("\\r\\nvv:'
+    this.code = 'local v = ' + luaAutoEscape(value) + '; vars.' + varName + ' = v; print("\\r\\nvv:'
             + varName + ':"..tostring(v).."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
-    this.code = 'globals.' + varName + ' = globals.' + varName + ' + ' + delta
-        + '; print("\\r\\nvv:' + varName + ':"..tostring(globals.' + varName + ').."\\r\\n")\r\n';
+    this.code = 'vars.' + varName + ' = vars.' + varName + ' + ' + delta
+        + '; print("\\r\\nvv:' + varName + ':"..tostring(vars.' + varName + ').."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.reportGetVar = function() {
-    this.code = 'globals.' + this.topBlock.blockSpec;
+    this.code = 'vars.' + this.topBlock.blockSpec;
+};
+
+LuaExpression.prototype.reportGetMessage = function() {
+    this.code = 'msg.' + this.topBlock.blockSpec;
 };
 
 LuaExpression.prototype.reportNewList = function() {
@@ -433,12 +442,11 @@ LuaExpression.prototype.assertMQTT = function() {
     return this.assertInternet() + 'if (cfg.m == nil) then ' + this.board.mqttConnectionCode() + ' end\r\n';
 };
 
-LuaExpression.prototype.subscribeToMQTTmessage = function(message, topic, body) {
+LuaExpression.prototype.subscribeToMQTTmessage = function(upvar, topic, body) {
     if (!body) { return };
     this.code 
         = 'print("\\r\\ndt:' + this.topBlock.thread.id + ':\\r\\n"); ' + this.assertMQTT() + 'cfg.m:subscribe(' + luaAutoEscape(topic) 
-        + ', mqtt.QOS0, (function(l, p) if (p == ' + luaAutoEscape(message)
-        + ') then print("\\r\\nrt:' + this.topBlock.thread.id + ':"..p.."\\r\\n");' + body + 'print("\\r\\ndt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); end end))\r\n';
+        + ', mqtt.QOS0, (function(l, p) msg.' + upvar + ' = p; print("\\r\\nrt:' + this.topBlock.thread.id + ':"..p.."\\r\\n");' + body + 'print("\\r\\ndt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); end))\r\n';
 };
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {

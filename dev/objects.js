@@ -288,8 +288,8 @@ BoardMorph.prototype.initBlocks = function () {
         subscribeToMQTTmessage: {
             type: 'hat',
             category: 'comm',
-            spec: 'when I receive %s at topic %s',
-            defaults: ['blink', '/test']
+            spec: 'when I receive %upvar at topic %s',
+            defaults: ['message', '/test']
         },
         publishMQTTmessage: {
             type: 'command',
@@ -702,8 +702,8 @@ BoardMorph.prototype.serialWrite = function(data) {
 
     if (this.serialPort.writing) {
         this.serialPort.writeAttempts += 1;
-        log('retry serial write: ' + this.serialPort.writeAttempts + ' time');
-        if (this.serialPort.writeAttempts > 10) {
+        log('retry serial write: attempt #' + this.serialPort.writeAttempts);
+        if (this.serialPort.writeAttempts > 9) {
             log('I am done retrying. Please reset the board...');
             return;
         };
@@ -805,7 +805,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
 
     var myself = this;
 
-    this.outputData = 'if (not globals) then globals = {} end\r\nif (not cfg) then cfg = {}; cfg.p = {} end\r\nthread.stop()\r\n';
+    this.outputData = 'if (not vars) then vars = {} end\r\nif (not msg) then msg = {} end\r\nif (not cfg) then cfg = {}; cfg.p = {} end\r\nthread.stop()\r\n';
     this.outputIndex = 0;
 
     this.scripts.children.forEach(function(topBlock) {

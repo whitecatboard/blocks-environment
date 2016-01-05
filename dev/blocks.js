@@ -628,7 +628,7 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
                 break;
             case '%inputName':
                 part = new ReporterBlockMorph();
-                part.category = 'variables';
+                part.category = 'data';
                 part.color = BoardMorph.prototype.blockColor.variables;
                 part.setSpec(localize('Input name'));
                 break;
@@ -1603,7 +1603,7 @@ BlockMorph.prototype.userMenu = function () {
             function() {
                 exp = new LuaExpression(myself, myself.receiver(), this.selector != 'subscribeToMQTTmessage');
                 myself.showBubble(exp);
-                console.log(exp.toString());
+                log(exp.toString());
             }
             );
 
@@ -6285,15 +6285,10 @@ TemplateSlotMorph.prototype.init = function (name) {
     this.labelString = name || '';
     template.isDraggable = false;
     template.isTemplate = true;
-    if (modules.objects !== undefined) {
-        template.color = BoardMorph.prototype.blockColor.variables;
-        template.category = 'variables';
-    } else {
-        template.color = new Color(243, 118, 29);
-        template.category = null;
-    }
+    template.color = BoardMorph.prototype.blockColor.data;
+    template.category = 'data';
     template.setSpec(this.labelString);
-    template.selector = 'reportGetVar';
+    template.selector = 'reportGetMessage';
     TemplateSlotMorph.uber.init.call(this);
     this.add(template);
     this.fixLayout();
