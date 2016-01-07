@@ -259,6 +259,24 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'data',
             spec: 'item %s of %l'
         },
+        reportListLength: {
+            type: 'reporter',
+            category: 'data',
+            spec: 'length of %l'
+        },
+        reportListContainsItem: {
+            type: 'reporter',
+            category: 'data',
+            spec: '%l contains %s ?',
+            defaults: [null, 'thing']
+        },
+        addListItem: {
+            type: 'command',
+            category: 'data',
+            spec: 'add %s to %l',
+            defaults: ['thing']
+        },
+
         // Input/Output
         setPinDigital: {
             type: 'command',
@@ -1167,7 +1185,13 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push('=');
 
         blocks.push(block('reportNewList'));
+        blocks.push('-');
         blocks.push(block('reportListItem'));
+        blocks.push('-');
+        blocks.push(block('reportListLength'));
+        blocks.push(block('reportListContainsItem'));
+        blocks.push('-');
+        blocks.push(block('addListItem'));
 
     } else if (cat === 'input / output') {
 

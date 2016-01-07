@@ -96,12 +96,11 @@ function toLuaNumber(val) {
 
 function luaAutoEscape(something) {
     // automatically escapes, or not, a possible string
-    if (!isNaN(Number(something))) {
+    if (!isNaN(Number(something))
+            || typeof(something) === 'object') {
         return something;
     } else if (typeof something === 'string') { 
         return '"' + luaEscape(something) + '"';
-    } else if (typeof(something) === 'object') {
-        return something;
     } else {
         return 'tostring(' + something + ')';
     }
@@ -379,26 +378,35 @@ LuaExpression.prototype.reportGetMessage = function() {
 LuaExpression.prototype.reportNewList = function() {
     var myself = this;
 
-    this.code = '({';
+    this.code = '(function() local t={';
     Array.prototype.slice.call(arguments).forEach(function(eachItem) {
-        if (typeof eachItem === 'string') { 
-            myself.code += '"' + luaEscape(eachItem) + '",';
-        } else {
-            myself.code += eachItem + ',';
-        } 
+        myself.code += luaAutoEscape(eachItem) + ',';
     });
-    this.code += '})';
+    this.code += '}; t.length = ' + arguments.length + '; return t; end)()';
 };
 
 LuaExpression.prototype.reportListItem = function(index, list) {
     this.code = '(' + list + '[' + index + '])';
 };
 
+LuaExpression.prototype.reportListLength = function(list) {
+    this.code = '((' + list + ').length)';
+};
+
+LuaExpression.prototype.reportListContainsItem = function(list, item) {
+    this.code = '(function() local l = ' + list + '; for i=1,l.length do if (l[i] == ' + luaAutoEscape(item) + ') then return(true) end end return false end)()';
+};
+
+
+LuaExpression.prototype.addListItem = function(item, list) {
+    this.code = list + '[' + list + '.length + 1] = ' + luaAutoEscape(item) + '; ' + list + '.length = ' + list + '.length + 1\n\r';
+};
+
 //// Input/Output
 
 LuaExpression.prototype.setDigitalPinConfig = function(pinNumber, pin, direction) {
     return 'if (cfg and (cfg.p[' + pinNumber + '] == nil or cfg.p[' + pinNumber + '][1] ~= "d" or cfg.p[' + pinNumber + '][2] ~= ' + direction + ')) then cfg.p[' + pinNumber + '] = {"d", ' + direction + '}; pwm.stop(' + BoardMorph.pinOut.pwm[pinNumber] + '); pio.pin.setdir(' + direction + ', pio.' + pin + '); end; '
-}
+};
 
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.digital[pinNumber];
@@ -417,7 +425,7 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
 
 LuaExpression.prototype.setPWMPinConfig = function(pinNumber, pin) {
     return 'if (cfg.p[' + pinNumber +'] == nil or cfg.p[' + pinNumber + '][1] ~= "a" or cfg.p[' + pinNumber + '][2] ~= 0) then cfg.p[' + pinNumber + '] = {"a", 0}; pwm.setup(' + pin +', pwm.DAC, 8, 0); end; '
-}
+};
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.pwm[pinNumber];
