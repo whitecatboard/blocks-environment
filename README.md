@@ -1,7 +1,3 @@
-Please see [http://bromagosa.github.io/WhiteCat/](http://bromagosa.github.io/WhiteCat/).
-
---
-
 ## Experimental releases
 
 Please note you need to download and install drivers for Win32 and MacOSX versions. The GNU/Linux version doesn't need any drivers, as usual ;)
