@@ -101,7 +101,7 @@ function luaVarToString(varName) {
 };
 
 function luaTableVarToString(varName) {
-    return '(function() local s = "List( "; for i=1,' + varName + '.length do s = s..' + varName + '[i]..", " end; return(s..")") end)()'
+    return '(function() local s = "List("; for i=1,' + varName + '.length do s = s..' + varName + '[i]..", " end; return(string.sub(s,0,-3)..")") end)()'
 }
 
 function luaAutoEscape(something) {
@@ -269,7 +269,7 @@ LuaExpression.prototype.doIfElse = function (condition, ifTrue, ifFalse) {
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'local result = ' + body + '; print("\\r\\npb:' + this.topBlock.thread.id + ':" .. tostring(body)); return result\r\n';
+    this.code = 'local result = ' + body + '; print("\\r\\npb:' + this.topBlock.thread.id + ':"..' + luaVarToString('body') + '); return result\r\n';
 };
 
 LuaExpression.prototype.doWait = function (secs) {
