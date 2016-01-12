@@ -94,6 +94,16 @@ function toLuaNumber(val) {
     return '(' + val + ' + 0)';
 };
 
+function luaVarToString(varName) {
+    return '(function() if (type(' + varName + ') == "string") then return ' + varName 
+            + ' elseif (type(' + varName + ') == "table") then return ' + luaTableVarToString(varName)
+            + ' else return tostring(' + varName + ') end end)()';
+};
+
+function luaTableVarToString(varName) {
+    return '(function() local s = "List( "; for i=1,' + varName + '.length do s = s..' + varName + '[i]..", " end; return(s..")") end)()'
+}
+
 function luaAutoEscape(something) {
     // automatically escapes, or not, a possible string
     if (!isNaN(Number(something))
@@ -359,12 +369,12 @@ LuaExpression.prototype.runLua = function(code) {
 
 LuaExpression.prototype.doSetVar = function(varName, value) {
     this.code = 'local v = ' + luaAutoEscape(value) + '; vars.' + varName + ' = v; print("\\r\\nvv:'
-            + varName + ':"..tostring(v).."\\r\\n")\r\n';
+            + varName + ':"..' + luaVarToString('v') + '.."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
     this.code = 'vars.' + varName + ' = vars.' + varName + ' + ' + delta
-        + '; print("\\r\\nvv:' + varName + ':"..tostring(vars.' + varName + ').."\\r\\n")\r\n';
+        + '; print("\\r\\nvv:' + varName + ':"..' + luaVarToString('vars.' + varName) + '.."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.reportGetVar = function() {
@@ -378,11 +388,11 @@ LuaExpression.prototype.reportGetMessage = function() {
 LuaExpression.prototype.reportNewList = function() {
     var myself = this;
 
-    this.code = '(function() local t={';
+    this.code = '(function() local l={';
     Array.prototype.slice.call(arguments).forEach(function(eachItem) {
         myself.code += luaAutoEscape(eachItem) + ',';
     });
-    this.code += '}; t.length = ' + arguments.length + '; return t; end)()';
+    this.code += '}; l.length = ' + arguments.length + '; return l; end)()';
 };
 
 LuaExpression.prototype.reportListItem = function(index, list) {
@@ -397,9 +407,24 @@ LuaExpression.prototype.reportListContainsItem = function(list, item) {
     this.code = '(function() local l = ' + list + '; for i=1,l.length do if (l[i] == ' + luaAutoEscape(item) + ') then return(true) end end return false end)()';
 };
 
-
 LuaExpression.prototype.addListItem = function(item, list) {
     this.code = list + '[' + list + '.length + 1] = ' + luaAutoEscape(item) + '; ' + list + '.length = ' + list + '.length + 1\n\r';
+};
+
+LuaExpression.prototype.deleteListItem = function(index, list) {
+    this.code = 'if (' + toLuaNumber(index) + ' <= ' + list + '.length and ' + toLuaNumber(index) + ' > 0) then for i = ' + toLuaNumber(index) + ','
+        + list + '.length - 1 do ' + list + '[i] = ' + list + '[i + 1] end; ' + list + '[' + list + '.length] = nil; ' + list + '.length = ' + list
+        + '.length - 1; end\n\r';
+};
+
+LuaExpression.prototype.insertListItem = function(item, index, list) {
+    this.code = 'if (' + toLuaNumber(index) + ' <= ' + list + '.length and ' + toLuaNumber(index) + ' > 0) then for i = ' + list + '.length,'
+        + toLuaNumber(index) + ',-1 do ' + list + '[i + 1] = ' + list + '[i] end; ' + list + '[' + toLuaNumber(index) + '] = ' + luaAutoEscape(item) + '; '
+        + list + '.length = ' + list + '.length + 1; end\n\r';
+};
+
+LuaExpression.prototype.replaceListItem = function(index, list, item) {
+    this.code = list + '[' + toLuaNumber(index) + '] = ' + luaAutoEscape(item) + '\n\r';
 };
 
 //// Input/Output

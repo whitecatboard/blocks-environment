@@ -248,11 +248,11 @@ BoardMorph.prototype.initBlocks = function () {
             spec: 'change %var by %n',
             defaults: [null, 1]
         },
-        // Tables
+        // Lists
         reportNewList: {
             type: 'reporter',
             category: 'data',
-            spec: 'table %exp'
+            spec: 'list %exp'
         },
         reportListItem: {
             type: 'reporter',
@@ -275,6 +275,25 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'data',
             spec: 'add %s to %l',
             defaults: ['thing']
+        },
+        deleteListItem: {
+            type: 'command',
+            category: 'data',
+            spec: 'delete item %n of %l',
+            defaults: [1, null]
+        },
+        insertListItem: {
+            type: 'command',
+            category: 'data',
+            spec: 'insert %s at %n of %l',
+            defaults: ['thing', 1, null]
+        },
+
+        replaceListItem: {
+            type: 'command',
+            category: 'data',
+            spec: 'replace item %n of %l with %s',
+            defaults: [1, null, 'thing']
         },
 
         // Input/Output
@@ -1192,6 +1211,9 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('reportListContainsItem'));
         blocks.push('-');
         blocks.push(block('addListItem'));
+        blocks.push(block('deleteListItem'));
+        blocks.push(block('insertListItem'));
+        blocks.push(block('replaceListItem'));
 
     } else if (cat === 'input / output') {
 
