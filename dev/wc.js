@@ -322,7 +322,7 @@ LuaExpression.prototype.reportLessThan = function (a, b) {
 };
 
 LuaExpression.prototype.reportEquals = function (a, b) {
-    this.code = '(' + a + ' == ' + b + ')';
+    this.code = '(' + luaAutoEscape(a) + ' == ' + luaAutoEscape(b) + ')';
 };
 
 LuaExpression.prototype.reportGreaterThan = function (a, b) {
@@ -479,7 +479,7 @@ LuaExpression.prototype.subscribeToMQTTmessage = function(upvar, topic, body) {
     if (!body) { return };
     this.code 
         = 'print("\\r\\ndt:' + this.topBlock.thread.id + ':\\r\\n"); ' + this.assertMQTT() + 'cfg.m:subscribe(' + luaAutoEscape(topic) 
-        + ', mqtt.QOS0, (function(l, p) msg.' + upvar + ' = p; print("\\r\\nrt:' + this.topBlock.thread.id + ':"..p.."\\r\\n");' + body + 'print("\\r\\ndt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); end))\r\n';
+        + ', mqtt.QOS0, (function(l, p) msg.' + upvar + ' = p; print("\\r\\nrt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); ' + body + 'print("\\r\\ndt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); end))\r\n';
 };
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
@@ -489,7 +489,7 @@ LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
 };
 
 
-// Dialog that lets us connect to an MQTT broker
+// Dialog that lets us configure an MQTT broker connection
 
 var MQTTDialogMorph;
 
