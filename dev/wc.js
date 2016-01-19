@@ -272,8 +272,20 @@ LuaExpression.prototype.doReport = function (body) {
     this.code = 'local result = ' + body + '; print("\\r\\npb:' + this.topBlock.thread.id + ':"..' + luaVarToString('body') + '); return result\r\n';
 };
 
-LuaExpression.prototype.doWait = function (secs) {
-    this.code = 'tmr.delayms(' + secs + ' * 1000)\r\n'
+LuaExpression.prototype.doWait = function (delay, timeScale) {
+    console.log(timeScale);
+    switch (timeScale) {
+        case 'milliseconds':
+            this.code = 'tmr.delayms(' + delay + ')\r\n';
+            break;
+        case 'microseconds':
+            this.code = 'tmr.delayus(' + delay + ')\r\n';
+            break;
+        case 'seconds':
+        default:
+            this.code = 'tmr.delayms(' + delay + ' * 1000)\r\n';
+            break;
+    }
 };
 
 
@@ -464,6 +476,15 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     this.code = '(function() if (cfg) then cfg.p[' + pinNumber + '] = {"a", 1} end local v = adc.setup(adc.ADC1, adc.AVDD, 3220); v = v:setupchan(12, ' + pin + '); v = v:read(); print("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()'
     this.board.updatePinConfig(pinNumber, 'i', 'a');
 };
+
+LuaExpression.prototype.setServoPinConfig = function(pinNumber, pin) {
+    return 'if (cfg.p[' + pinNumber +'] == nil or cfg.p[' + pinNumber + '][1] ~= "s") then cfg.p[' + pinNumber + '] = {"s"}; pwm.setup(' + pin +', pwm.DEFAULT, 50, 0.075); pwm.start(' + pin + ') end; '
+};
+
+LuaExpression.prototype.setServo = function(pinNumber, value) {
+    var pin = BoardMorph.pinOut.pwm[pinNumber];
+    this.code = this.setServoPinConfig(pinNumber, pin) + 'local v = ' + toLuaNumber(value) + '; if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
+}
 
 //// Comm
 

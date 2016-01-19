@@ -866,6 +866,33 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
             case '%p':
                 part = new ReporterSlotMorph(true);
                 break;
+            case '%servoValue':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            degrees : [180],
+                            clockwise : [1200],
+                            stopped : [1500],
+                            'counter-clockwise' : [1800]
+                        },
+                        false
+                        );
+                part.setContents([180]);
+                break;
+            case '%timeScale':
+                part = new InputSlotMorph(
+                        null,
+                        false,
+                        {
+                            seconds : ['seconds'],
+                            milliseconds : ['milliseconds'],
+                            microseconds : ['microseconds']
+                        },
+                        true
+                        );
+                part.setContents(['seconds']);
+                break;
             case '%greenflag':
                 part = new SymbolMorph('pointRight');
                 part.size = this.fontSize * 1.5;

@@ -71,8 +71,8 @@ BoardMorph.prototype.initBlocks = function () {
         doWait: {
             type: 'command',
             category: 'control',
-            spec: 'wait %n secs',
-            defaults: [1]
+            spec: 'wait %n %timeScale',
+            defaults: [1, 'seconds']
         },
         doWaitUntil: {
             type: 'command',
@@ -301,7 +301,7 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'input / output',
             spec: 'set pin %digitalPin to digital %s',
-            defaults: [14, true]
+            defaults: [13, true]
         },
         setPinAnalog: {
             type: 'command',
@@ -320,6 +320,12 @@ BoardMorph.prototype.initBlocks = function () {
             category: 'input / output',
             spec: 'get analog value from pin %analogPin',
             defaults: [11]
+        },
+        setServo: {
+            type: 'command',
+            category: 'input / output',
+            spec: 'set servo %pwmPin to %servoValue',
+            defaults: [13, 180]
         },
         // Comm
         subscribeToMQTTmessage: {
@@ -842,7 +848,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
 
     var myself = this;
 
-    this.outputData = 'if (not vars) then vars = {} end\r\nif (not msg) then msg = {} end\r\nif (not cfg) then cfg = {}; cfg.p = {} end\r\nthread.stop()\r\n';
+    this.outputData = 'thread.stop()\r\n';
     this.outputIndex = 0;
 
     this.scripts.children.forEach(function(topBlock) {
@@ -1226,6 +1232,8 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
         blocks.push(block('getPinDigital'));
         blocks.push(block('getPinAnalog'));
+        blocks.push('-');
+        blocks.push(block('setServo'));
 
     } else if (cat === 'comm') {
 
