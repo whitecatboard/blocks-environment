@@ -442,7 +442,7 @@ LuaExpression.prototype.replaceListItem = function(index, list, item) {
 //// Input/Output
 
 LuaExpression.prototype.setDigitalPinConfig = function(pinNumber, pin, direction) {
-    return 'if (cfg and (cfg.p[' + pinNumber + '] == nil or cfg.p[' + pinNumber + '][1] ~= "d" or cfg.p[' + pinNumber + '][2] ~= ' + direction + ')) then cfg.p[' + pinNumber + '] = {"d", ' + direction + '}; pwm.stop(' + BoardMorph.pinOut.pwm[pinNumber] + '); pio.pin.setdir(' + direction + ', pio.' + pin + '); end; '
+    return 'if (cfg and (cfg.p[' + pinNumber + '] == nil or cfg.p[' + pinNumber + '][1] ~= "d" or cfg.p[' + pinNumber + '][2] ~= ' + direction + ')) then cfg.p[' + pinNumber + '] = {"d", ' + direction + '}; pio.pin.setdir(' + direction + ', pio.' + pin + '); end; '
 };
 
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {

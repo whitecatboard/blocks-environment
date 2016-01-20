@@ -257,7 +257,7 @@ BoardMorph.prototype.initBlocks = function () {
         reportListItem: {
             type: 'reporter',
             category: 'data',
-            spec: 'item %s of %l'
+            spec: 'item %n of %l'
         },
         reportListLength: {
             type: 'reporter',
@@ -268,13 +268,13 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'reporter',
             category: 'data',
             spec: '%l contains %s ?',
-            defaults: [null, 'thing']
+            defaults: [null, localize('thing')]
         },
         addListItem: {
             type: 'command',
             category: 'data',
             spec: 'add %s to %l',
-            defaults: ['thing']
+            defaults: [localize('thing')]
         },
         deleteListItem: {
             type: 'command',
@@ -286,14 +286,14 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'data',
             spec: 'insert %s at %n of %l',
-            defaults: ['thing', 1, null]
+            defaults: [localize('thing'), 1, null]
         },
 
         replaceListItem: {
             type: 'command',
             category: 'data',
             spec: 'replace item %n of %l with %s',
-            defaults: [1, null, 'thing']
+            defaults: [1, null, localize('thing')]
         },
 
         // Input/Output
@@ -306,7 +306,7 @@ BoardMorph.prototype.initBlocks = function () {
         setPinAnalog: {
             type: 'command',
             category: 'input / output',
-            spec: 'set pin %pwmPin to analog %s',
+            spec: 'set pin %pwmPin to analog %n',
             defaults: [10, 128]
         },
         getPinDigital: {
@@ -332,13 +332,13 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'hat',
             category: 'comm',
             spec: 'when I receive %upvar at topic %s',
-            defaults: ['message', '/test']
+            defaults: [localize('message'), '/test']
         },
         publishMQTTmessage: {
             type: 'command',
             category: 'comm',
             spec: 'broadcast %s at topic %s',
-            defaults: ['hello network', '/test']
+            defaults: [localize('hello network'), '/test']
         }
     };
 };
@@ -1285,7 +1285,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
         /*
         blocks.push(button);
         */
-        blocks.push(new TextMorph('Not available yet'))
+        blocks.push(new TextMorph(localize('Not available yet')))
     }
     return blocks;
 };

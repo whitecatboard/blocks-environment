@@ -660,7 +660,7 @@ IDE_Morph.prototype.stopAllScripts = function () {
 // IDE_Morph skins
 
 IDE_Morph.prototype.refreshIDE = function () {
-    var projectData;
+    var projectData = this.serializer.serialize(this.board);
 
     BoardMorph.prototype.initBlocks();
     this.buildPanes();
@@ -1120,16 +1120,46 @@ IDE_Morph.prototype.aboutSnap = function () {
 IDE_Morph.prototype.newProject = function () {
     this.source = 'local';
     if (this.board) {
-        this.board.reset();
-        this.board.destroy();
+        var scripts = this.board.scripts;
+        for (i = scripts.children.length; i >= 0; i --) {
+            scripts.removeChild(scripts.children[i]);
+        }
+    } else {
+        this.createBoard();
     }
     if (location.hash.substr(0, 6) !== '#lang:') {
         location.hash = '';
     }
     this.setProjectName('');
     this.projectNotes = '';
-    this.createBoard();
     this.fixLayout();
+};
+
+IDE_Morph.prototype.openProjectString = function (str) {
+    var msg,
+        myself = this;
+    this.nextSteps([
+        function () {
+            msg = myself.showMessage('Opening project...');
+        },
+        function () {nop(); }, // yield (bug in Chrome)
+        function () {
+            myself.newProject();
+        },
+        function () {
+            myself.rawOpenProjectString(str);
+        },
+        function () {
+            msg.destroy();
+        }
+    ]);
+};
+
+IDE_Morph.prototype.rawOpenProjectString = function (str) {
+    this.serializer.openProject(
+            this.serializer.load(str, this),
+            this
+            );
 };
 
 IDE_Morph.prototype.loadFromString = function (str) {
@@ -1439,19 +1469,19 @@ IDE_Morph.prototype.setLanguage = function (lang, callback) {
 };
 
 IDE_Morph.prototype.reflectLanguage = function (lang, callback) {
-    var projectData;
+    var projectData = this.serializer.serialize(this.board);
     SnapTranslator.language = lang;
     BoardMorph.prototype.initBlocks();
     this.categories = null;
     this.createCategories();
+    this.flushBlocksCache();
+    this.refreshPalette(true);
     this.fixLayout();
-    /*
     if (this.loadNewProject) {
         this.newProject();
     } else {
         this.openProjectString(projectData);
     }
-    */
     this.saveSetting('language', lang);
     if (callback) {callback.call(this); }
 };
@@ -1528,11 +1558,13 @@ IDE_Morph.prototype.userSetBlocksScale = function () {
 };
 
 IDE_Morph.prototype.setBlocksScale = function (num) {
-    var projectData;
+    var projectData = this.serializer.serialize(this.board);
     SyntaxElementMorph.prototype.setScale(num);
     CommentMorph.prototype.refreshScale();
     BoardMorph.prototype.initBlocks();
     this.createCategories();
+    this.flushBlocksCache();
+    this.refreshPalette(true);
     this.fixLayout();
     this.openProjectString(projectData);
     this.saveSetting('zoom', num);
