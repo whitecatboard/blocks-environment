@@ -301,7 +301,7 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'input / output',
             spec: 'set pin %digitalPin to digital %s',
-            defaults: [13, true]
+            defaults: [13, 1]
         },
         setPinAnalog: {
             type: 'command',
@@ -535,7 +535,7 @@ BoardMorph.prototype.fixLayout = function() {
             row --;
         }
 
-        if (pin == 21) {
+        if (pin == 20) {
             column ++;
             row += 3;
         }
@@ -733,7 +733,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         clearInterval(this.startUpInterval);
         this.startUpInterval = null;
         // INTERVAL for reading inputs:
-        // for key in pairs(cfg.p) do if (cfg.p[key][2] == 1) then print(key) end end end)(); if (f) then print(\"pb:2:\" .. f) end;\r\n
+        // for key in pairs(cfg.p) do if (cfg.p[key][2] == 1) then prints(key) end end end)(); if (f) then prints(\"pb:2:\" .. f) end;\r\n
         myself.ide.showMessage('Board ready.', 2);
     } else {
         log(data);
@@ -887,9 +887,9 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
 BoardMorph.prototype.getReporterResult = function (block) {
     this.reporterBlock = block;
     if (block.selector === 'reportNewList') {
-        this.serialWrite('print("pb:r:"..' + luaTableVarToString(new LuaExpression(block, this)) + ')\r\n');
+        this.serialWrite('prints("pb:r:"..' + luaTableVarToString(new LuaExpression(block, this)) + ')\r\n');
     } else {
-        this.serialWrite('print("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r\n');
+        this.serialWrite('prints("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r\n');
     }
 }
 
