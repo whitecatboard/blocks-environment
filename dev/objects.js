@@ -441,11 +441,70 @@ BoardMorph.prototype.init = function (ide) {
     this.fixLayout();
 };
 
+BoardMorph.prototype.drawNew = function() {
+    BoardMorph.uber.drawNew.call(this);
+    this.image = newCanvas(this.extent());
+    this.outlinePath(this.image.getContext('2d'), 5, 2);
+}
+
+
+BoardMorph.prototype.outlinePath = function (context, radius, inset) {
+    var offset = radius + inset,
+        w = this.width(),
+        h = this.height(),
+        rad;
+
+    context.beginPath();
+    context.strokeStyle = "#000000";
+    context.fillStyle = "#FFFFFF";
+
+    // top left:
+    context.arc(
+        offset,
+        offset,
+        radius,
+        radians(-180),
+        radians(-90),
+        false
+    );
+    // top right:
+    context.arc(
+        w - offset,
+        offset,
+        radius,
+        radians(-90),
+        radians(-0),
+        false
+    );
+    // bottom right:
+    context.arc(
+        w - offset,
+        h - offset - radius,
+        radius,
+        radians(0),
+        radians(90),
+        false
+    );
+    // bottom left:
+    context.arc(
+        offset,
+        h - offset - radius,
+        radius,
+        radians(90),
+        radians(180),
+        false
+    );
+    context.closePath();
+    context.stroke();
+    context.fill();
+};
+
+
 BoardMorph.prototype.fixLayout = function() {
     var myself = this,
         fieldWidth,
         column = 0,
-        row = 2;
+        row = 1;
 
     if (this.pinMorphs) {
         this.pinMorphs.forEach(function(m) { m.destroy() });
@@ -454,8 +513,7 @@ BoardMorph.prototype.fixLayout = function() {
     this.pinMorphs = [];
 
     this.setWidth(194);
-    this.setHeight(260);
-    this.setColor(new Color(0, 0, 0, 0));
+    this.setHeight(266);
 
     fieldWidth = 92;
 
@@ -472,7 +530,7 @@ BoardMorph.prototype.fixLayout = function() {
         field.setWidth(fieldWidth);
         field.setHeight(14);
         field.setLeft(myself.left() + column * fieldWidth + column * 5 + 2);
-        field.setTop(myself.top() + row * 16 + 2);
+        field.setTop(myself.top() + row * 16 + 3);
 
         field.label = new TextMorph(pin);
         field.label.setTop(field.top());
@@ -481,17 +539,19 @@ BoardMorph.prototype.fixLayout = function() {
 
         var configHolder = new Morph();
         configHolder.setPosition(field.position());
-        configHolder.setColor(new Color(255,255,255));
+        configHolder.setColor(new Color(200,200,200));
         configHolder.setWidth(16);
-        configHolder.setHeight(16);
+        configHolder.setHeight(14);
         field.config = new TextMorph('? -');
         field.config.setPosition(configHolder.position());
         configHolder.add(field.config);
+        field.configHolder = configHolder;
         field.add(configHolder);
 
         field.updateConfig = function(isInput, isAnalog) {
             var content = isAnalog ? 'A' : 'D';
             content += isInput ? '►' : '◄';
+            field.configHolder.setColor(new Color(250,250,250));
             field.config.text = content;
             field.config.changed();
             field.config.drawNew();
@@ -503,7 +563,7 @@ BoardMorph.prototype.fixLayout = function() {
         field.valueHolder.setLeft(field.left() + 38);
         field.valueHolder.setWidth(field.width() - 38);
         field.valueHolder.setHeight(field.height());
-        field.valueHolder.setColor(new Color(255,255,255));
+        field.valueHolder.setColor(new Color(200,200,200));
         field.value = new TextMorph('-');
         field.value.setTop(field.valueHolder.top());
         field.value.setLeft(field.valueHolder.left() + 2);
@@ -537,7 +597,7 @@ BoardMorph.prototype.fixLayout = function() {
 
         if (pin == 20) {
             column ++;
-            row += 3;
+            row += 1;
         }
     })
 }
