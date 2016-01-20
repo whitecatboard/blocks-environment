@@ -275,13 +275,13 @@ LuaExpression.prototype.doReport = function (body) {
 LuaExpression.prototype.doWait = function (delay, timeScale) {
     console.log(timeScale);
     switch (timeScale) {
-        case 'milliseconds':
+        case localize('milliseconds'):
             this.code = 'tmr.delayms(' + delay + ')\r\n';
             break;
-        case 'microseconds':
+        case localize('microseconds'):
             this.code = 'tmr.delayus(' + delay + ')\r\n';
             break;
-        case 'seconds':
+        case localize('seconds'):
         default:
             this.code = 'tmr.delayms(' + delay + ' * 1000)\r\n';
             break;
