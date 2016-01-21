@@ -373,6 +373,10 @@ LuaExpression.prototype.reportJoinWords = function () {
     this.code += ')';
 };
 
+LuaExpression.prototype.reportTimer = function() {
+    this.code = '(os.clock())';
+}
+
 LuaExpression.prototype.runLua = function(code) {
     this.code = 'local f = (function() ' + code + ' end)(); if (f) then prints("\\r\\npb:' + this.topBlock.thread.id + ':" .. f .. "\\r\\n") end;\r\n';
 };
@@ -461,7 +465,7 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
 };
 
 LuaExpression.prototype.setPWMPinConfig = function(pinNumber, pin) {
-    return 'if (cfg.p[' + pinNumber +'] == nil or cfg.p[' + pinNumber + '][1] ~= "a" or cfg.p[' + pinNumber + '][2] ~= 0) then cfg.p[' + pinNumber + '] = {"a", 0}; pwm.setup(' + pin +', pwm.DAC, 8, 0); end; '
+    return 'if (cfg.p[' + pinNumber +'] == nil or cfg.p[' + pinNumber + '][1] ~= "a" or cfg.p[' + pinNumber + '][2] ~= 0) then cfg.p[' + pinNumber + '] = {"a", 0}; pwm.setup(' + pin +', pwm.DAC, 12, 0); end; '
 };
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {

@@ -140,6 +140,8 @@ SnapTranslator.dict.ca = {
         'hola,',
     'world':
         'món',
+    'timer value':
+        'valor del rellotge',
     'run lua %s':
         'executa lua %s',
 

@@ -228,6 +228,11 @@ BoardMorph.prototype.initBlocks = function () {
             spec: 'join %words',
             defaults: [localize('hello') + ' ', localize('world')]
         },
+        reportTimer: {
+            type: 'reporter',
+            category: 'operators',
+            spec: 'timer value'
+        },
         runLua: {
             type: 'command',
             category: 'operators',
@@ -1214,6 +1219,8 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push(block('reportFalse'));
         blocks.push('-');
         blocks.push(block('reportJoinWords'));
+        blocks.push('-');
+        blocks.push(block('reportTimer'));
         blocks.push('-');
         blocks.push(block('runLua'));
 
