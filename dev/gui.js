@@ -873,22 +873,13 @@ IDE_Morph.prototype.settingsMenu = function () {
             'check to run\nthe edited script\nwhen moving the slider'
         );
     }
-    addPreference(
-        'Keyboard Editing',
-        function () {
-            ScriptsMorph.prototype.enableKeyboard =
-                !ScriptsMorph.prototype.enableKeyboard;
-            if (ScriptsMorph.prototype.enableKeyboard) {
-                myself.saveSetting('keyboard', true);
-            } else {
-                myself.removeSetting('keyboard');
-            }
-        },
-        ScriptsMorph.prototype.enableKeyboard,
-        'uncheck to disable\nkeyboard editing support',
-        'check to enable\nkeyboard editing support',
-        false
-    );
+    menu.addLine();
+    menu.addItem(
+            'Update boot file',
+            'updateBootFile',
+            'This file is stored in\nthe board and defines'
+                +'\nbasic functions needed\nfor the blocks environment\nto work.'
+            );
     menu.popup(world, pos);
 };
 
@@ -946,7 +937,7 @@ IDE_Morph.prototype.projectMenu = function () {
             myself.filePicker = inp;
             inp.click();
         },
-        'Load an WhiteCat project from a file'
+        'Load a WhiteCat project from a file'
     );
 
     if (shiftClicked) {
@@ -1140,7 +1131,7 @@ IDE_Morph.prototype.openProjectString = function (str, name, silent) {
         myself = this;
     this.nextSteps([
         function () {
-            if (!silent) { msg = myself.showMessage('Opening project...') }
+            if (!silent) { msg = myself.showMessage('Opening project...'); }
         },
         function () {nop(); }, // yield (bug in Chrome)
         function () {
@@ -1421,6 +1412,10 @@ IDE_Morph.prototype.toggleSliderExecute = function () {
     InputSlotMorph.prototype.executeOnSliderEdit =
         !InputSlotMorph.prototype.executeOnSliderEdit;
 };
+
+IDE_Morph.prototype.updateBootFile = function() {
+    this.board.updateBootFile();
+}
 
 IDE_Morph.prototype.createNewProject = function () {
     var myself = this;

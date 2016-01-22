@@ -73,9 +73,11 @@
 
 // Global utils
 
-debugMode = true;
+var debugMode = true;
 
-log = function(d) {
+var fs = require('fs');
+
+var log = function(d) {
     if (!debugMode) { return }
     print = {
         'darwin' : function(d) { process.stdout.write(d + '\n') },
@@ -83,15 +85,6 @@ log = function(d) {
         'linux'  : function(d) { process.stdout.write(d + '\n') }
     }
     print[process.platform](d);
-};
-
-function toLuaDigital(val) {
-    // makes sure val is understood as a boolean by Lua
-    return '((' + val + ' == true or ' + val + ' == 1) and 1 or 0)'
-};
-
-function toLuaNumber(val) {
-    return '(' + val + ' + 0)';
 };
 
 function luaVarToString(varName) {
@@ -342,7 +335,7 @@ LuaExpression.prototype.reportRandom = function (a, b) {
 };
 
 LuaExpression.prototype.reportLessThan = function (a, b) {
-    this.code = '(' + toLuaNumber(a) + ' < ' + toLuaNumber(b) + ')';
+    this.code = '(toNumber(' + a + ') < toNumber(' + b + '))';
 };
 
 LuaExpression.prototype.reportEquals = function (a, b) {
@@ -350,19 +343,19 @@ LuaExpression.prototype.reportEquals = function (a, b) {
 };
 
 LuaExpression.prototype.reportGreaterThan = function (a, b) {
-    this.code = '(' + toLuaNumber(a) + ' > ' + toLuaNumber(b) + ')';
+    this.code = '(toNumber(' + a + ') > toNumber(' + b + '))';
 };
 
 LuaExpression.prototype.reportAnd = function (a, b) {
-    this.code = '(' + toLuaDigital(a) + ' and ' + toLuaDigital(b) + ')';
+    this.code = '(toDigital(' + a + ') and toDigital(' + b +'))';
 };
 
 LuaExpression.prototype.reportOr = function (a, b) {
-    this.code = '(' + toLuaDigital(a) + ' or ' + toLuaDigital(b) + ')';
+    this.code = '(toDigital(' + a + ') or toDigital( ' + b + '))';
 };
 
 LuaExpression.prototype.reportNot = function (a) {
-    this.code = '(not ' + toLuaDigital(a) + ')';
+    this.code = '(not toDigital(' + a + '))';
 };
 
 LuaExpression.prototype.reportTrue = function () {
@@ -440,31 +433,27 @@ LuaExpression.prototype.addListItem = function(item, list) {
 };
 
 LuaExpression.prototype.deleteListItem = function(index, list) {
-    this.code = 'if (' + toLuaNumber(index) + ' <= ' + list + '.length and ' + toLuaNumber(index) + ' > 0) then for i = ' + toLuaNumber(index) + ','
+    this.code = 'if (toNumber( ' + index + ') <= ' + list + '.length and toNumber(' + index + ') > 0) then for i = toNumber(' + index + '),'
         + list + '.length - 1 do ' + list + '[i] = ' + list + '[i + 1] end; ' + list + '[' + list + '.length] = nil; ' + list + '.length = ' + list
         + '.length - 1; end\n\r';
 };
 
 LuaExpression.prototype.insertListItem = function(item, index, list) {
-    this.code = 'if (' + toLuaNumber(index) + ' <= ' + list + '.length and ' + toLuaNumber(index) + ' > 0) then for i = ' + list + '.length,'
-        + toLuaNumber(index) + ',-1 do ' + list + '[i + 1] = ' + list + '[i] end; ' + list + '[' + toLuaNumber(index) + '] = ' + luaAutoEscape(item) + '; '
-        + list + '.length = ' + list + '.length + 1; end\n\r';
+    this.code = 'if (toNumber(' + index + ') <= ' + list + '.length and toNumber(' + index + ') > 0) then for i = ' 
+        + list + '.length, toNumber(' + index + '),-1 do ' + list + '[i + 1] = ' + list + '[i] end; ' + list + 
+        '[toNumber(' + index + ')] = ' + luaAutoEscape(item) + '; ' + list + '.length = ' + list + '.length + 1; end\n\r';
 };
 
 LuaExpression.prototype.replaceListItem = function(index, list, item) {
-    this.code = list + '[' + toLuaNumber(index) + '] = ' + luaAutoEscape(item) + '\n\r';
+    this.code = list + '[toNumber(' + index + ')] = ' + luaAutoEscape(item) + '\n\r';
 };
 
 //// Input/Output
 
-LuaExpression.prototype.setDigitalPinConfig = function(pinNumber, pin, direction) {
-    return 'if (cfg and (cfg.p[' + pinNumber + '] == nil or cfg.p[' + pinNumber + '][1] ~= "d" or cfg.p[' + pinNumber + '][2] ~= ' + direction + ')) then cfg.p[' + pinNumber + '] = {"d", ' + direction + '}; pio.pin.setdir(' + direction + ', pio.' + pin + '); end; '
-};
-
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.digital[pinNumber];
     // pio.OUTPUT is 0
-    this.code =  this.setDigitalPinConfig(pinNumber, pin, 0) + 'prints("\\r\\npv:' + pinNumber + ':"..' + toLuaDigital(value) + '.."\\r\\n"); pio.pin.setval(' + toLuaDigital(value) + ', pio.' + pin + ')\r\n';
+    this.code =  'setPinConfig(' + pinNumber + ', ' + pin + ', "d", 0); prints("\\r\\npv:' + pinNumber + ':".. toDigital(' + value + ').."\\r\\n"); pio.pin.setval(toDigital(' + value + '), ' + pin + ')\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'd');
 };
 
@@ -472,24 +461,20 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
     var pin = BoardMorph.pinOut.digital[pinNumber];
-    this.code = '(function() ' + this.setDigitalPinConfig(pinNumber, pin, 1) + ' local v = pio.pin.getval(pio.' + pin + '); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()\r\n';
+    this.code = '(function() setPinConfig(' + pinNumber + ', ' + pin + ', "d", 1); local v = pio.pin.getval(' + pin + '); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()\r\n';
     this.board.updatePinConfig(pinNumber, 'i', 'd');
-};
-
-LuaExpression.prototype.setPWMPinConfig = function(pinNumber, pin) {
-    return 'if (cfg.p[' + pinNumber +'] == nil or cfg.p[' + pinNumber + '][1] ~= "a" or cfg.p[' + pinNumber + '][2] ~= 0) then cfg.p[' + pinNumber + '] = {"a", 0}; pwm.setup(' + pin +', pwm.DAC, 12, 0); end; '
 };
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.pwm[pinNumber];
-    this.code = this.setPWMPinConfig(pinNumber, pin) + 'local v = ' + toLuaNumber(value) + '; pwm.write(' + pin + ', v); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n");\r\n';
+    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "a", 0); local v = toNumber(' + value + '); pwm.write(' + pin + ', v); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n");\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'a');
 };
 
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
     var pin = BoardMorph.pinOut.analog[pinNumber];
-    this.code = '(function() if (cfg) then cfg.p[' + pinNumber + '] = {"a", 1} end local v = adc.setup(adc.ADC1, adc.AVDD, 3220); v = v:setupchan(12, ' + pin + '); v = v:read(); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()'
+    this.code = '(function() setPinConfig(' + pinNumber + ', ' + pin + ', "a", 1); local v = cfg.p[' + pinNumber + '][3]:read(); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()'
     this.board.updatePinConfig(pinNumber, 'i', 'a');
 };
 
@@ -499,7 +484,7 @@ LuaExpression.prototype.setServoPinConfig = function(pinNumber, pin) {
 
 LuaExpression.prototype.setServo = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.pwm[pinNumber];
-    this.code = this.setServoPinConfig(pinNumber, pin) + 'local v = ' + toLuaNumber(value) + '; if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
+    this.code = this.setServoPinConfig(pinNumber, pin) + 'local v = toNumber(' + value + ') if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
 }
 
 //// Comm

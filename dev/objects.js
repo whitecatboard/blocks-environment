@@ -718,9 +718,16 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 this.previousData = this.outputData;
                 this.outputData = null;
                 this.outputIndex = 0;
-                var buffer = new Buffer(30);
-                buffer[0] = 0;
-                buffer.write('\r\ndofile("/sd/autorun.lua")\r\n', 1);
+                if (this.updatingBoot) { 
+                    this.updatingBoot = false;
+                    var buffer = new Buffer(14);
+                    buffer[0] = 0;
+                    buffer.write('\r\nos.exit()\r\n', 1);
+                } else {
+                    var buffer = new Buffer(30);
+                    buffer[0] = 0;
+                    buffer.write('\r\ndofile("/sd/autorun.lua")\r\n', 1);
+                }
                 this.serialWrite(buffer);
             } else {
                 var chunk = this.outputData.slice(this.outputIndex, this.outputIndex + 254),
@@ -828,8 +835,7 @@ BoardMorph.prototype.serialWrite = function(data) {
 }
 
 BoardMorph.prototype.loadPinOut = function(boardName) {
-    var myself = this,
-        fs = require('fs');
+    var myself = this;
 
     fs.readFile('boards/' + boardName + '.json', function(error, data) {
         if (error) {
@@ -868,6 +874,34 @@ BoardMorph.prototype.stopAll = function() {
 BoardMorph.prototype.reset = function() {
     //this.serialWrite('thread.stop();os.exit()\r\n');
     this.stopAll();
+}
+
+// Boot file update
+
+BoardMorph.prototype.updateBootFile = function() {
+    var myself = this;
+
+    this.outputData = '\r\nthread.stop()\r\n';
+    this.outputIndex = 0;
+    this.updatingBoot = true;
+    
+    fs.readFile(
+            'lua/autorun.lua', 
+            function(error, data) {
+                if (error) {
+                    myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not update boot file'); 
+                } else {
+                    try {
+                        myself.outputData += data;
+                        myself.serialWrite(
+                                '\rio.receive("autorun.lua")\r',
+                                myself.parentThatIsA(IDE_Morph).showMessage('Boot file updated', 2)
+                                );
+                    } catch (error) {
+                        myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not update boot file');
+                    }
+                }
+            })
 }
 
 // Thread handling
