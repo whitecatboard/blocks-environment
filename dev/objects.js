@@ -1174,10 +1174,10 @@ BoardMorph.prototype.blockTemplates = function (category) {
         blocks.push('-');
         blocks.push(block('doIf'));
         blocks.push(block('doIfElse'));
-        blocks.push('-');
-        blocks.push(block('doReport'));
         // Not yet implemented
         /*
+        blocks.push('-');
+        blocks.push(block('doReport'));
         blocks.push('-');
         blocks.push(block('doStopThis'));
         blocks.push(block('doStopOthers'));
