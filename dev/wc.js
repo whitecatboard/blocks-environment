@@ -206,7 +206,12 @@ LuaExpression.prototype.init = function(topBlock, board) {
             args.push(input.contents().text);
         } else if (input instanceof CSlotMorph) {
             // If it's a CSlotMorph, get its nested block
-            args.push(new LuaExpression(input.nestedBlock(), board));
+            var contents = input.nestedBlock();
+            if (contents) {
+                args.push(new LuaExpression(contents, board));
+            } else {
+                args.push(null);
+            }
         } else if (input instanceof MultiArgMorph) {
             // If it's a variadic input, let's recursively traverse its inputs
             input.inputs().forEach(function(each) { translateInput(each) });
@@ -249,21 +254,29 @@ LuaExpression.prototype.receiveGo = function () {
 // Iterators
 
 LuaExpression.prototype.doForever = function (body) {
-    this.code = 'while (true) do\r\n' + body + 'end\r\n';
+    if (body) {
+        this.code = 'while (true) do\r\n' + body + 'end\r\n';
+    }
 };
 
 LuaExpression.prototype.doRepeat = function (times, body) {
-    this.code = 'for i=1,' + times + ' do\r\n' + body + 'end\r\n';
+    if (body) {
+        this.code = 'for i=1,' + times + ' do\r\n' + body + 'end\r\n';
+    }
 };
 
 // Conditionals
 
 LuaExpression.prototype.doIf = function (condition, body) {
-    this.code = 'if ' + condition + ' then\r\n' + body + '\r\nend\r\n';
+    if (body) {
+        this.code = 'if ' + condition + ' then\r\n' + body + '\r\nend\r\n';
+    }
 };
 
 LuaExpression.prototype.doIfElse = function (condition, ifTrue, ifFalse) {
-    this.code = 'if ' + condition + ' then\r\n' + ifTrue + '\r\nelse\r\n' + ifFalse + '\r\nend\r\n';
+    if (ifTrue && ifFalse) {
+        this.code = 'if ' + condition + ' then\r\n' + ifTrue + '\r\nelse\r\n' + ifFalse + '\r\nend\r\n';
+    }
 };
 
 // Others
@@ -273,7 +286,6 @@ LuaExpression.prototype.doReport = function (body) {
 };
 
 LuaExpression.prototype.doWait = function (delay, timeScale) {
-    console.log(timeScale);
     switch (timeScale) {
         case localize('milliseconds'):
             this.code = 'tmr.delayms(' + delay + ')\r\n';
