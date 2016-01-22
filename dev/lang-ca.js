@@ -178,26 +178,26 @@ SnapTranslator.dict.ca = {
     'insert %s at %n of %l':
         'insereix %s a la posició %n de %l',
     'replace item %n of %l with %s':
-        'substitueix l\'element %n de %l per %s',
+        'substitueix element %n de %l per %s',
 
     // Input / output
     'set pin %digitalPin to digital %s':
-        'posa el pin digital %digitalPin a %s',
+        'posa pin digital %digitalPin a %s',
     'set pin %pwmPin to analog %n':
-        'posa el pin analògic %pwmPin a %n',
+        'posa pin analògic %pwmPin a %n',
     'get digital value from pin %digitalPin':
-        'valor del pin digital %digitalPin',
+        'valor de pin digital %digitalPin',
     'get analog value from pin %analogPin':
-        'valor del pin analògic %analogPin',
+        'valor de pin analògic %analogPin',
     'set servo %pwmPin to %servoValue':
-        'posa el servomotor %pwmPin a %servoValue',
+        'posa servomotor %pwmPin a %servoValue',
 
     // Comm
 
     'message':
         'missatge',
     'Connect to MQTT broker':
-        'Connecta\'t a un broker d\'MQTT',
+        'Connecta amb broker d\'MQTT',
     'when I receive %upvar at topic %s':
         'quan rebi un %upvar sobre el tema %s',
     'broadcast %s at topic %s':
@@ -512,6 +512,18 @@ SnapTranslator.dict.ca = {
     // messages
     'new...':
         'nou...',
+    'No boards found.\nPlease enter the serial port name\nor leave blank to retry discovery\nand press OK':
+        'No s\'ha trobat cap placa.\nSi us plau, introdueix el nom\ndel port sèrie, o deixa\'l en blanc per\ntornar a provar el descobriment\nautomàtic, i clica "D\'acord"',
+    'select a port':
+        'selecciona un port',
+    'Board connected at ':
+        'Placa connectada a ',
+    'Waiting for board to be ready...':
+        'Esperant que la placa estigui llesta...',
+    '\nIf this takes too long, try resetting the board\nby connecting P04 (GND) and P05 (MCLR) together.':
+        '\nSi això triga massa, intenta reiniciar la placa\nconnectant el pin P04 (GND) amb el P05 (MCLR).',
+    'Board ready.':
+        'Placa preparada',
 
     // math functions
     'abs':

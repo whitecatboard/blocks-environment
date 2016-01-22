@@ -312,7 +312,7 @@ BoardMorph.prototype.initBlocks = function () {
             type: 'command',
             category: 'input / output',
             spec: 'set pin %pwmPin to analog %n',
-            defaults: [10, 128]
+            defaults: [10, 2048]
         },
         getPinDigital: {
             type: 'reporter',
@@ -654,7 +654,7 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
         var ports = this.discoverPorts(function(ports) {
             if (Object.keys(ports).length == 0) {
                 world.prompt(
-                        'No boards found.\nPlease enter the serial port name\nor leave blank to retry discovery\nand press OK', 
+                        localize('No boards found.\nPlease enter the serial port name\nor leave blank to retry discovery\nand press OK'),
                         function(port){
                             myself.serialConnect(port, baudrate)
                         },
@@ -665,7 +665,7 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
             } else if (Object.keys(ports).length == 1) {
                 myself.serialConnect(ports[Object.keys(ports)[0]], baudrate);
             } else if (Object.keys(ports).length > 1) { 
-                var portMenu = new MenuMorph(this, 'select a port');
+                var portMenu = new MenuMorph(this, localize('select a port'));
                 Object.keys(ports).forEach(function(each) {
                     portMenu.addItem(each, function() { 
                         myself.serialConnect(each, baudrate);
@@ -688,11 +688,11 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
         this.serialPort.on('open', function (err) {
             if (err) { log(err) };
             myself.startUp();
-            myself.ide.showModalMessage('Board connected at ' + port + '.\nWaiting for board to be ready...');
+            myself.ide.showModalMessage(localize('Board connected at ') + port + '.\n' + localize('Waiting for board to be ready...'));
             myself.startUpInterval = 
                 setInterval(function() {
-                    myself.ide.showModalMessage('Waiting for board to be ready...\n' + randomFace()
-                            + '\nIf this takes too long, try resetting the board\nby connecting P04 (GND) and P05 (MCLR) together.');
+                    myself.ide.showModalMessage(localize('Waiting for board to be ready...') + '\n' + randomFace()
+                            + localize('\nIf this takes too long, try resetting the board\nby connecting P04 (GND) and P05 (MCLR) together.'));
                     myself.startUp() 
                 }, 
                 2000);
@@ -799,7 +799,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         this.startUpInterval = null;
         // INTERVAL for reading inputs:
         // for key in pairs(cfg.p) do if (cfg.p[key][2] == 1) then prints(key) end end end)(); if (f) then prints(\"pb:2:\" .. f) end;\r\n
-        myself.ide.showMessage('Board ready.', 2);
+        myself.ide.showMessage(localize('Board ready.'), 2);
     } else {
         log(data);
     }

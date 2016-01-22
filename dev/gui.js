@@ -1135,12 +1135,12 @@ IDE_Morph.prototype.newProject = function () {
     this.fixLayout();
 };
 
-IDE_Morph.prototype.openProjectString = function (str) {
+IDE_Morph.prototype.openProjectString = function (str, name, silent) {
     var msg,
         myself = this;
     this.nextSteps([
         function () {
-            msg = myself.showMessage('Opening project...');
+            if (!silent) { msg = myself.showMessage('Opening project...') }
         },
         function () {nop(); }, // yield (bug in Chrome)
         function () {
@@ -1150,7 +1150,7 @@ IDE_Morph.prototype.openProjectString = function (str) {
             myself.rawOpenProjectString(str);
         },
         function () {
-            msg.destroy();
+            if (msg) { msg.destroy(); }
         }
     ]);
 };
@@ -1480,7 +1480,7 @@ IDE_Morph.prototype.reflectLanguage = function (lang, callback) {
     if (this.loadNewProject) {
         this.newProject();
     } else {
-        this.openProjectString(projectData);
+        this.openProjectString(projectData, null, true);
     }
     this.saveSetting('language', lang);
     if (callback) {callback.call(this); }
@@ -1566,7 +1566,7 @@ IDE_Morph.prototype.setBlocksScale = function (num) {
     this.flushBlocksCache();
     this.refreshPalette(true);
     this.fixLayout();
-    this.openProjectString(projectData);
+    this.openProjectString(projectData, null, true);
     this.saveSetting('zoom', num);
 };
 
