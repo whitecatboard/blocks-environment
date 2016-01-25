@@ -12,4 +12,4 @@ Please note you need to download and install drivers for Win32 and MacOSX versio
 
 ---
 
-_Latest release: **21/01/2016**_
+_Latest release: **25/01/2016**_
