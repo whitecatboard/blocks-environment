@@ -48,7 +48,7 @@ toNumber = function(value) return (value + 0) end
 pwmMap = { nil, nil, nil, nil, nil, nil, nil, 3, nil, 7, 1, 4, 5, nil, nil, 8 }
 
 isPwmConfig = function(pinConfig)
-    return (pinConfig ~= nil and (pinConfig[1] == "a" and pinConfig[2] == 0))
+    return (pinConfig ~= nil and ((pinConfig[1] == "a" or pinConfig[1] == "s") and pinConfig[2] == 0))
 end
 
 setPinConfig = function(pinNumber, pin, mode, direction)
@@ -67,6 +67,9 @@ setPinConfig = function(pinNumber, pin, mode, direction)
             local a = adc.setup(adc.ADC1, adc.AVDD, 3220)
             cfg.p[pinNumber][3] = a:setupchan(12, pin)
         end
+    elseif (mode == "s") then
+        pwm.setup(pin, pwm.DEFAULT, 50, 0.075)
+        pwm.start(pin)
     else
         pio.pin.setdir(direction, pin)
     end

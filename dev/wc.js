@@ -478,13 +478,9 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     this.board.updatePinConfig(pinNumber, 'i', 'a');
 };
 
-LuaExpression.prototype.setServoPinConfig = function(pinNumber, pin) {
-    return 'if (cfg.p[' + pinNumber +'] == nil or cfg.p[' + pinNumber + '][1] ~= "s") then cfg.p[' + pinNumber + '] = {"s"}; pwm.setup(' + pin +', pwm.DEFAULT, 50, 0.075); pwm.start(' + pin + ') end; '
-};
-
 LuaExpression.prototype.setServo = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.pwm[pinNumber];
-    this.code = this.setServoPinConfig(pinNumber, pin) + 'local v = toNumber(' + value + ') if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
+    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "s", 0); local v = toNumber(' + value + '); if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
 }
 
 //// Comm
