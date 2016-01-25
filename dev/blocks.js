@@ -423,7 +423,7 @@ SyntaxElementMorph.prototype.getVarNamesDict = function () {
     });
     if (rcvr) {
         dict = {};
-        tempVars.concat(Object.keys(rcvr.variables)).forEach(function (name) {
+        tempVars.concat(rcvr.variables).forEach(function (name) {
             dict[name] = name;
         });
         return dict;

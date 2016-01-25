@@ -213,8 +213,10 @@ SnapTranslator.dict.ca = {
 
     // menus
     // snap menu
-    'About...':
-        'Sobre WhiteCat',
+    'About Snap!...':
+        'Sobre Snap!...',
+    'About WhiteCat...':
+        'Sobre WhiteCat...',
     'Reference manual':
         'Manual de referència',
     'WhiteCat website':

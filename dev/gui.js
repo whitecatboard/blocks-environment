@@ -761,7 +761,8 @@ IDE_Morph.prototype.snapMenu = function () {
         world = this.world();
 
     menu = new MenuMorph(this);
-    menu.addItem('About...', 'aboutSnap');
+    menu.addItem('About Snap!...', 'aboutSnap');
+    menu.addItem('About WhiteCat...', 'aboutWhiteCat');
     if (world.isDevMode) {
         menu.addLine();
         menu.addItem(
@@ -1104,6 +1105,87 @@ IDE_Morph.prototype.aboutSnap = function () {
     dlg.fixLayout();
     dlg.drawNew();
 };
+
+IDE_Morph.prototype.aboutWhiteCat = function () {
+    var dlg, aboutTxt, noticeTxt, btn1, btn2, licenseBtn,
+        world = this.world(),
+        pic = Morph.fromImageURL('logos-about.png');
+
+    pic.setExtent(new Point(230, 76));
+
+    aboutTxt = 'WhiteCat blocks environment\n\n'
+        + 'Copyright \u24B8 2016 Bernat Romagosa\n'
+        + 'Edutec Research Group, Citilab - Cornellà de Llobregat (Barcelona)\n'
+        + 'bromagosa@e-citilab.eu - edutec@e-citilab.eu'
+        + '\n\n'
+        + 'WhiteCat is based on a stripped-down version of Snap!, by Jens Mönig,\n'
+        + 'and reuses its whole Morphic system, its blocks rendering engine, many\n'
+        + 'of its widgets and, in general, several parts of its graphic user\n'
+        + 'interface.\n\n'
+        + 'It has been turned into a desktop application thanks to the nwjs\n'
+        + 'framework, and relies on Chris Williams\'s NodeJS serial port module\n'
+        + 'for serial communications with the board.\n\n'
+        + 'This project has been sponsored by the Barcelona Metropolitan Area\n'
+        + 'administration (AMB), along with the design of the hardware platform.\n'
+        + 'and the LuaOS project.\n\n'
+        + 'For any questions, please contact us at:\n'
+        + 'edutec@e-citilab.eu\n\n'
+        + 'http://amb.cat\n'
+        + 'http://citilab.eu\n'
+        + 'http://edutec.citilab.eu\n'
+
+
+    noticeTxt = localize('License')
+        + '\n\n'
+        + 'WhiteCat is free software: you can redistribute it and/or modify\n'
+        + 'it under the terms of the GNU Affero General Public License as\n'
+        + 'published by the Free Software Foundation, either version 3 of\n'
+        + 'the License, or (at your option) any later version.\n\n'
+
+        + 'This program is distributed in the hope that it will be useful,\n'
+        + 'but WITHOUT ANY WARRANTY; without even the implied warranty of\n'
+        + 'MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n'
+        + 'GNU Affero General Public License for more details.\n\n'
+
+        + 'You should have received a copy of the\n'
+        + 'GNU Affero General Public License along with this program.\n'
+        + 'If not, see http://www.gnu.org/licenses/';
+
+
+    dlg = new DialogBoxMorph();
+    dlg.inform('About WhiteCat', aboutTxt, world, pic);
+    btn1 = dlg.buttons.children[0];
+    btn2 = dlg.addButton(
+        function () {
+            dlg.body.text = aboutTxt;
+            dlg.body.drawNew();
+            btn1.show();
+            btn2.hide();
+            licenseBtn.show();
+            dlg.fixLayout();
+            dlg.drawNew();
+            dlg.setCenter(world.center());
+        },
+        'Back...'
+    );
+    btn2.hide();
+    licenseBtn = dlg.addButton(
+        function () {
+            dlg.body.text = noticeTxt;
+            dlg.body.drawNew();
+            btn1.show();
+            btn2.show();
+            licenseBtn.hide();
+            dlg.fixLayout();
+            dlg.drawNew();
+            dlg.setCenter(world.center());
+        },
+        'License...'
+    );
+    dlg.fixLayout();
+    dlg.drawNew();
+
+}
 
 IDE_Morph.prototype.newProject = function () {
     this.source = 'local';
