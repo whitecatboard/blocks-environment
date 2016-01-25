@@ -744,8 +744,8 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
                             atan : ['atan'],
                             ln : ['ln'],
                             log : ['log'],
-                                'e^' : ['e^'],
-                                '10^' : ['10^']
+                            'e^' : ['e^'],
+                            '10^' : ['10^']
                         },
                         true
                         );

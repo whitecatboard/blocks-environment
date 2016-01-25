@@ -307,7 +307,16 @@ LuaExpression.prototype.reportModulus = function (a, b) {
 };
 
 LuaExpression.prototype.reportMonadic = function (func, a) {
-    var specialFunctions = { ln: 'math.log', log: 'math.log10', 'e^': 'math.exp', '10^': '10^' };
+    var specialFunctions = { 
+        ln: 'math.log',
+        log: 'math.log10',
+        'e^': 'math.exp',
+        '10^': '10^'
+    };
+
+    specialFunctions[localize('abs')] = 'math.abs';
+    specialFunctions[localize('floor')] = 'math.floor';
+    specialFunctions[localize('sqrt')] = 'math.sqrt';
 
     this.code = '(';
 
