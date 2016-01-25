@@ -18,8 +18,8 @@
 -- along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
--- Globals
--- =======
+-- Global tables
+-- =============
 
 vars = {}
 msg = {}
@@ -40,6 +40,22 @@ prints = function(string) uart.write(uart.UART1, string.."\r\n") end
 
 toDigital = function(value) return ((value == true or value == 1) and 1 or 0) end
 toNumber = function(value) return (value + 0) end
+
+printVar = function(var)
+    if (type(var) == "string") then
+        return var
+    elseif (type(var) == "table") then
+        return printTable(var)
+    else
+        return tostring(var)
+    end
+end
+
+printTable = function(t)
+    local s = "List("
+    for i = 1, t.length do s = s .. t[i] .. ", " end
+    return (string.sub(s, 0, -3) .. ")")
+end
 
 
 -- Pin config

@@ -87,16 +87,6 @@ var log = function(d) {
     print[process.platform](d);
 };
 
-function luaVarToString(varName) {
-    return '(function() if (type(' + varName + ') == "string") then return ' + varName 
-            + ' elseif (type(' + varName + ') == "table") then return ' + luaTableVarToString(varName)
-            + ' else return tostring(' + varName + ') end end)()';
-};
-
-function luaTableVarToString(varName) {
-    return '(function() local s = "List("; for i=1,' + varName + '.length do s = s..' + varName + '[i]..", " end; return(string.sub(s,0,-3)..")") end)()'
-}
-
 function luaAutoEscape(something) {
     // automatically escapes, or not, a possible string
     if (!isNaN(Number(something))
@@ -275,7 +265,7 @@ LuaExpression.prototype.doIfElse = function (condition, ifTrue, ifFalse) {
 // Others
 
 LuaExpression.prototype.doReport = function (body) {
-    this.code = 'local result = ' + body + '; prints("\\r\\npb:' + this.topBlock.thread.id + ':"..' + luaVarToString('body') + '); return result\r\n';
+    // Not yet implemented
 };
 
 LuaExpression.prototype.doWait = function (delay, timeScale) {
@@ -390,12 +380,12 @@ LuaExpression.prototype.runLua = function(code) {
 
 LuaExpression.prototype.doSetVar = function(varName, value) {
     this.code = 'local v = ' + luaAutoEscape(value) + '; vars.' + varName + ' = v; prints("\\r\\nvv:'
-            + varName + ':"..' + luaVarToString('v') + '.."\\r\\n")\r\n';
+            + varName + ':"..printVar(v).."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
     this.code = 'vars.' + varName + ' = vars.' + varName + ' + ' + delta
-        + '; prints("\\r\\nvv:' + varName + ':"..' + luaVarToString('vars.' + varName) + '.."\\r\\n")\r\n';
+        + '; prints("\\r\\nvv:' + varName + ':"..var(vars.' + varName + ').."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.reportGetVar = function() {
