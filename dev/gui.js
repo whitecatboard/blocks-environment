@@ -926,9 +926,6 @@ IDE_Morph.prototype.projectMenu = function () {
                         };
                         frd.readAsText(aFile);
                     }
-                    for (i = myself.board.scripts.children.length; i >= 0; i --) {
-                        myself.board.scripts.removeChild(myself.board.scripts.children[i])
-                    }
                     readText(files[0]);
                 },
                 false
@@ -1111,10 +1108,12 @@ IDE_Morph.prototype.aboutSnap = function () {
 IDE_Morph.prototype.newProject = function () {
     this.source = 'local';
     if (this.board) {
+        this.board.reset();
         var scripts = this.board.scripts;
         for (i = scripts.children.length; i >= 0; i --) {
             scripts.removeChild(scripts.children[i]);
         }
+        this.board.deleteAllVariables();
     } else {
         this.createBoard();
     }
@@ -1154,14 +1153,20 @@ IDE_Morph.prototype.rawOpenProjectString = function (str) {
 };
 
 IDE_Morph.prototype.loadFromString = function (str) {
-    try {
-        this.serializer.openProject(
-                this.serializer.load(str, this),
-                this
-                );
-    } catch (err) {
-        this.showMessage('Load failed: ' + err);
-    }
+    var myself = this;
+    this.nextSteps([
+        function() { myself.newProject() },
+        function() {
+            try {
+                this.serializer.openProject(
+                        this.serializer.load(str, this),
+                        this
+                        );
+            } catch (err) {
+                this.showMessage('Load failed: ' + err);
+            }
+        }
+    ]);
 }
 
 IDE_Morph.prototype.saveToDisk = function (name, plain) {

@@ -394,7 +394,7 @@ LuaExpression.prototype.doSetVar = function(varName, value) {
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
     this.code = 'vars.' + varName + ' = vars.' + varName + ' + ' + delta
-        + '; prints("\\r\\nvv:' + varName + ':"..var(vars.' + varName + ').."\\r\\n")\r\n';
+        + '; prints("\\r\\nvv:' + varName + ':"..printVar(vars.' + varName + ').."\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.reportGetVar = function() {

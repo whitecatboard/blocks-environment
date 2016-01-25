@@ -414,7 +414,7 @@ BoardMorph.prototype.init = function (ide) {
     this.customBlocks = [];
     this.version = Date.now(); // for observer optimization
 
-    this.variables = {};
+    this.variables = [];
 
     this.blocksCache = {}; // not to be serialized (!)
     this.paletteCache = {}; // not to be serialized (!)
@@ -872,8 +872,7 @@ BoardMorph.prototype.stopAll = function() {
 }
 
 BoardMorph.prototype.reset = function() {
-    //this.serialWrite('thread.stop();os.exit()\r\n');
-    this.stopAll();
+    this.serialWrite('os.exit()\r\n');
 }
 
 // Boot file update
@@ -994,16 +993,22 @@ BoardMorph.prototype.getReporterResult = function (block) {
 
 // Variables
 BoardMorph.prototype.addVariable = function(name) {
-    this.variables[name] = 0;
+    this.variables.push(name);
 }
 
 BoardMorph.prototype.deleteVariable = function(name) {
-    delete this.variables[name];
+    this.variables.splice(this.variables.indexOf(name), 1);
     this.deleteVariableWatcher(name);
     this.variableBlock('name').destroy();
     ide = this.parentThatIsA(IDE_Morph);
     ide.flushBlocksCache('data'); // b/c of inheritance
     ide.refreshPalette();
+}
+
+BoardMorph.prototype.deleteAllVariables = function() {
+    for (i = this.variables.length - 1; i >= 0; i--) {
+        this.deleteVariable(this.variables[i]);
+    }
 }
 
 BoardMorph.prototype.findVariableWatcher = function (varName) {
@@ -1168,7 +1173,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
     function addVar(name) {
         var ide;
         if (name) {
-            if (contains(Object.keys(myself.variables), name)) {
+            if (contains(myself.variables, name)) {
                 myself.inform('that name is already in use');
             } else {
                 ide = myself.parentThatIsA(IDE_Morph);
@@ -1278,7 +1283,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
         button.selector = 'addVariable';
         blocks.push(button);
 
-        if (Object.keys(this.variables).length > 0) {
+        if (this.variables.length > 0) {
             button = new PushButtonMorph(
                 null,
                 function () {
@@ -1287,7 +1292,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
                         null,
                         myself
                     );
-                    Object.keys(myself.variables).forEach(function (name) {
+                    myself.variables.forEach(function (name) {
                         menu.addItem(name, name);
                     });
                     menu.popUpAtHand(myself.world());
@@ -1300,7 +1305,7 @@ BoardMorph.prototype.blockTemplates = function (category) {
 
         blocks.push('-');
 
-        varNames = Object.keys(this.variables);
+        varNames = this.variables;
         if (varNames.length > 0) {
             varNames.forEach(function (name) {
                 blocks.push(variableWatcherToggle(name));

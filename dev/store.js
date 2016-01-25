@@ -119,6 +119,7 @@ XML_Serializer.prototype.store = function (object, mediaID) {
     if (isNil(object) || !object.toXML) {
         // unsupported type, to be checked before calling store()
         // when debugging, be sure to throw an error at this point
+        if (typeof(object) === 'string') return '<variable name="' + object + '"></variable>';
         return '';
     }
     if (object[this.idProperty]) {
@@ -308,16 +309,6 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode, ide) {
         project.notes = model.notes.contents;
     }
 
-    model.variables = model.project.childNamed('variables');
-    project.variables = {};
-
-    if (model.variables) {
-        this.loadVariables(
-            project.variables,
-            model.variables
-        );
-    }
-
     /* Watchers */
 
     /*
@@ -394,6 +385,9 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode, ide) {
     model.board = model.project.require('board');
     project.board = ide.board;
 
+    model.board.variables = model.board.require('variables');
+    project.board.variables = [];
+
     try {
         model.board.broker = model.board.require('broker');
         project.board.broker.url = model.board.broker.attributes.url;
@@ -448,7 +442,7 @@ SnapSerializer.prototype.loadObject = function (object, model) {
     this.loadScripts(object.scripts, model.require('scripts'));
 };
 
-SnapSerializer.prototype.loadVariables = function (varDict, element) {
+SnapSerializer.prototype.loadVariables = function (varArray, element) {
     // private
     var myself = this;
 
@@ -457,8 +451,7 @@ SnapSerializer.prototype.loadVariables = function (varDict, element) {
         if (child.tag !== 'variable') {
             return;
         }
-        value = child.children[0];
-        varDict[child.attributes.name] = value ? myself.loadValue(value) : 0;
+        varArray.push(child.attributes.name);
     });
 };
 
@@ -898,6 +891,7 @@ Array.prototype.toXML = function (serializer) {
 
 BoardMorph.prototype.toXML = function (serializer) {
     var ide = this.parentThatIsA(IDE_Morph);
+
     return serializer.format(
         '<project name="@"><board>' +
             '<broker url="@" port="@" deviceID="@" username="@" password="@"></broker>' +
