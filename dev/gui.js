@@ -1018,7 +1018,7 @@ IDE_Morph.prototype.aboutSnap = function () {
     translations = localize('Translations') + '\n' + SnapTranslator.credits();
 
     dlg = new DialogBoxMorph();
-    dlg.inform('About Snap', aboutTxt, world);
+    dlg.inform(localize('About Snap!'), aboutTxt, world);
     btn1 = dlg.buttons.children[0];
     translatorsBtn = dlg.addButton(
         function () {
@@ -1126,7 +1126,7 @@ IDE_Morph.prototype.aboutWhiteCat = function () {
         + 'framework, and relies on Chris Williams\'s NodeJS serial port module\n'
         + 'for serial communications with the board.\n\n'
         + 'This project has been sponsored by the Barcelona Metropolitan Area\n'
-        + 'administration (AMB), along with the design of the hardware platform.\n'
+        + 'administration (AMB), along with the design of the hardware platform\n'
         + 'and the LuaOS project.\n\n'
         + 'For any questions, please contact us at:\n'
         + 'edutec@e-citilab.eu\n\n'
@@ -1135,7 +1135,7 @@ IDE_Morph.prototype.aboutWhiteCat = function () {
         + 'http://edutec.citilab.eu\n'
 
 
-    noticeTxt = localize('License')
+    noticeTxt = 'License'
         + '\n\n'
         + 'WhiteCat is free software: you can redistribute it and/or modify\n'
         + 'it under the terms of the GNU Affero General Public License as\n'
@@ -1153,11 +1153,11 @@ IDE_Morph.prototype.aboutWhiteCat = function () {
 
 
     dlg = new DialogBoxMorph();
-    dlg.inform('About WhiteCat', aboutTxt, world, pic);
+    dlg.inform(localize('About WhiteCat'), localize(aboutTxt), world, pic);
     btn1 = dlg.buttons.children[0];
     btn2 = dlg.addButton(
         function () {
-            dlg.body.text = aboutTxt;
+            dlg.body.text = localize(aboutTxt);
             dlg.body.drawNew();
             btn1.show();
             btn2.hide();
@@ -1171,7 +1171,7 @@ IDE_Morph.prototype.aboutWhiteCat = function () {
     btn2.hide();
     licenseBtn = dlg.addButton(
         function () {
-            dlg.body.text = noticeTxt;
+            dlg.body.text = localize(noticeTxt);
             dlg.body.drawNew();
             btn1.show();
             btn2.show();

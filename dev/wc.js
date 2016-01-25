@@ -143,15 +143,7 @@ Thread.prototype.wrap = function(body) {
 Thread.prototype.start = function() {
     return 't_' + this.id + ' = thread.start(t' + this.id + ')\r\n'
 };
-/*
-Thread.prototype.suspend = function() {
-    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.suspend(t_' + this.id + ') end\r\n'
-};
 
-Thread.prototype.resume = function() {
-    return 'if (thread.status(t_' + this.id + ' or -1)) then thread.resume(t_' + this.id + ') end\r\n'
-};
-*/
 Thread.prototype.stop = function() {
     return 'thread.stop(t_' + this.id + ')\r\n'
 };

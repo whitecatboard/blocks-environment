@@ -213,6 +213,10 @@ SnapTranslator.dict.ca = {
 
     // menus
     // snap menu
+    'About Snap!':
+        'Sobre Snap!',
+    'About WhiteCat':
+        'Sobre WhiteCat',
     'About Snap!...':
         'Sobre Snap!...',
     'About WhiteCat...':
@@ -231,6 +235,10 @@ SnapTranslator.dict.ca = {
         'Canviar a mode desenvolupador',
     'enable Morphic\ncontext menus\nand inspectors,\nnot user-friendly!':
         'habilitar menús\ncontextuals de\nMorphic i inspectors,\nmode expert!',
+
+    // about
+    'WhiteCat blocks environment\n\nCopyright \u24B8 2016 Bernat Romagosa\nEdutec Research Group, Citilab - Cornellà de Llobregat (Barcelona)\nbromagosa@e-citilab.eu - edutec@e-citilab.eu\n\nWhiteCat is based on a stripped-down version of Snap!, by Jens Mönig,\nand reuses its whole Morphic system, its blocks rendering engine, many\nof its widgets and, in general, several parts of its graphic user\ninterface.\n\nIt has been turned into a desktop application thanks to the nwjs\nframework, and relies on Chris Williams\'s NodeJS serial port module\nfor serial communications with the board.\n\nThis project has been sponsored by the Barcelona Metropolitan Area\nadministration (AMB), along with the design of the hardware platform\nand the LuaOS project.\n\nFor any questions, please contact us at:\nedutec@e-citilab.eu\n\nhttp://amb.cat\nhttp://citilab.eu\nhttp://edutec.citilab.eu\n':
+        'Entorn de blocs WhiteCat\n\nCopyright \u24B8 2016 Bernat Romagosa\nEquip de recerca Edutec, Citilab - Cornellà de Llobregat (Barcelona)\nbromagosa@e-citilab.eu - edutec@e-citilab.eu\n\nWhiteCat està basat en una versió minimitzada de Snap!, de Jens Mönig, i\nreutilitza tot el seu sistema Morphic, el seu motor de renderitzat de blocs,\nmolts dels widgets i, en general, diverses parts de la seva interfície gràfica.\n\nHa estat convertit en aplicació d\'escriptori gràcies al framework nwjs, i fa\nús del mòdul de NodeJS per a serial port de Chris Williams per la\ncomunicació per sèrie amb la placa.\n\nAquest projecte ha estat esponsoritzat per l\'Àrea Metropolitana de Barcelona\n(AMB), que també ha esponsoritzat el diseny de la plataforma de hardware i el\nprojecte LuaOS.\n\nPer a qualsevol qüestió, contacteu amb nosaltres a:\nedutec@e-citilab.eu\n\nhttp://amb.cat\nhttp://citilab.eu\nhttp://edutec.citilab.eu\n',
 
     // project menu
     'Project notes...':
