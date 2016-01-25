@@ -13,3 +13,20 @@ Please note you need to download and install drivers for Win32 and MacOSX versio
 ---
 
 _Latest release: **25/01/2016**_
+
+---
+
+The WhiteCat packager is not included in this repository because it contains lots of binaries, which would increase its size way too much.
+
+The packager, including all binaries and builder scripts, can be found [here](http://vps34736.ovh.net/whitecat/WhiteCat-builder.tar.gz), while the _nwjs_ source and binaries can be found [here](https://github.com/nwjs/nw.js).
+
+The packager includes the following scripts:
+
+* **update.sh** → Updates the packager to the latest WhiteCat version available in this repository
+* **build-gnu32.sh** → Builds the GNU/Linux 32b package based on the WhiteCat version in the packager
+* **build-gnu64.sh** → Builds the GNU/Linux 64b package based on the WhiteCat version in the packager
+* **build-osx.sh** → Builds the MacOSX package based on the WhiteCat version in the packager
+* **build-win32.sh** → Builds the Microsoft Windows package based on the WhiteCat version in the packager
+* **update-build-all.sh** → Updates the packager to the latest WhiteCat version available in this repository and builds packages for all platforms. Additionally, it copies these ready-to-download packages into _/var/www/whitecat_, which should exist.
+
+The Microsoft Windows packaging script depends on [Inno Setup](http://www.jrsoftware.org/isinfo.php), ran headless by Wine.
