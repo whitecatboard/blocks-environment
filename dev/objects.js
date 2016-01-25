@@ -985,7 +985,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
 BoardMorph.prototype.getReporterResult = function (block) {
     this.reporterBlock = block;
     if (block.selector === 'reportNewList') {
-        this.serialWrite('prints("pb:r:"..' + luaTableVarToString(new LuaExpression(block, this)) + ')\r\n');
+        this.serialWrite('prints("pb:r:"..printTable(' + new LuaExpression(block, this) + '))\r\n');
     } else {
         this.serialWrite('prints("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r\n');
     }
