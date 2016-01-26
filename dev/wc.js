@@ -470,8 +470,24 @@ LuaExpression.prototype.getPinAnalog = function(pinNumber) {
 };
 
 LuaExpression.prototype.setServo = function(pinNumber, value) {
-    var pin = BoardMorph.pinOut.pwm[pinNumber];
-    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "s", 0); local v = toNumber(' + value + '); if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
+    var pin = BoardMorph.pinOut.pwm[pinNumber],
+        rawValue;
+
+    switch (value) {
+        case localize('clockwise'):
+            rawValue = 1200;
+            break;
+        case localize('counter-clockwise'):
+            rawValue = 1800;
+            break;
+        case localize('stopped'):
+            rawValue = 1500;
+        default:
+            rawValue = 'toNumber(' + value + ')';
+            break;
+    }
+
+    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "s", 0); local v = ' + rawValue + '; if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
 }
 
 //// Comm

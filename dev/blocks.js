@@ -872,9 +872,9 @@ SyntaxElementMorph.prototype.labelPart = function (spec) {
                         false,
                         {
                             degrees : [180],
-                            clockwise : [1200],
-                            stopped : [1500],
-                            'counter-clockwise' : [1800]
+                            clockwise : ['clockwise'],
+                            stopped : ['stopped'],
+                            'counter-clockwise' : ['counter-clockwise']
                         },
                         false
                         );
