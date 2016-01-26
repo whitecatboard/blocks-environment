@@ -230,7 +230,7 @@ LuaExpression.prototype.receiveGo = function () {
 
 LuaExpression.prototype.doForever = function (body) {
     if (body) {
-        this.code = 'while (true) do\r\n' + body + 'end\r\n';
+        this.code = 'while (true) do\r\n' + body + '\r\ntmr.delayus(1); end\r\n';
     }
 };
 
@@ -346,7 +346,7 @@ LuaExpression.prototype.reportOr = function (a, b) {
 };
 
 LuaExpression.prototype.reportNot = function (a) {
-    this.code = '(not toDigital(' + a + '))';
+    this.code = '(not (toDigital(' + a + ')))';
 };
 
 LuaExpression.prototype.reportTrue = function () {
@@ -444,7 +444,7 @@ LuaExpression.prototype.replaceListItem = function(index, list, item) {
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.digital[pinNumber];
     // pio.OUTPUT is 0
-    this.code =  'setPinConfig(' + pinNumber + ', ' + pin + ', "d", 0); prints("\\r\\npv:' + pinNumber + ':".. toDigital(' + value + ').."\\r\\n"); pio.pin.setval(toDigital(' + value + '), ' + pin + ')\r\n';
+    this.code =  'setPinConfig(' + pinNumber + ', ' + pin + ', "d", 0); prints("\\r\\npv:' + pinNumber + ':".. tostring(toDigital(' + value + ')).."\\r\\n"); pio.pin.setval(digitalToNumber(toDigital(' + value + ')), ' + pin + ')\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'd');
 };
 

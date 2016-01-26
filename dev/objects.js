@@ -946,7 +946,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
 
     var myself = this;
 
-    this.outputData = 'thread.stop()\r\n';
+    this.outputData = '\r\nthread.stop()\r\n';
     this.outputIndex = 0;
 
     this.scripts.children.forEach(function(topBlock) {
@@ -999,7 +999,7 @@ BoardMorph.prototype.addVariable = function(name) {
 BoardMorph.prototype.deleteVariable = function(name) {
     this.variables.splice(this.variables.indexOf(name), 1);
     this.deleteVariableWatcher(name);
-    this.variableBlock('name').destroy();
+    this.variableBlock(name).destroy();
     ide = this.parentThatIsA(IDE_Morph);
     ide.flushBlocksCache('data'); // b/c of inheritance
     ide.refreshPalette();

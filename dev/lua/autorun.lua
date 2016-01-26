@@ -38,7 +38,8 @@ prints = function(string) uart.write(uart.UART1, string.."\r\n") end
 -- Casting
 -- =======
 
-toDigital = function(value) return ((value == true or value == 1) and 1 or 0) end
+toDigital = function(value) return (value == true or value == 1) end
+digitalToNumber = function(value) return (value and 1 or 0) end
 toNumber = function(value) return (value + 0) end
 
 printVar = function(var)
