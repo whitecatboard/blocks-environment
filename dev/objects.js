@@ -653,13 +653,12 @@ BoardMorph.prototype.serialConnect = function(port, baudrate) {
     if (!port) { 
         var ports = this.discoverPorts(function(ports) {
             if (Object.keys(ports).length == 0) {
-                world.prompt(
-                        localize('No boards found.\nPlease enter the serial port name\nor leave blank to retry discovery\nand press OK'),
+                myself.ide.modalPrompt(
+                        localize('No boards found'),
+                        localize('Please enter the serial port name or leave\nblank to retry discovery and press OK'),
                         function(port){
                             myself.serialConnect(port, baudrate)
-                        },
-                        this,
-                        port
+                        }
                         );
                 return;
             } else if (Object.keys(ports).length == 1) {

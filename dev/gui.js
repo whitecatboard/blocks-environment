@@ -1690,28 +1690,70 @@ IDE_Morph.prototype.showModalMessage = function (message, secs) {
     return m;
 };
 
+IDE_Morph.prototype.modalPrompt = function (title, message, callback, choices, key) {
+    var overlay = new Morph(),
+        myself = this,
+        m = this.prompt(title, callback, choices, key),
+        contents = new AlignmentMorph('column', 5);
+    
+    contents.add(new TextMorph(message));
+    contents.add(copy(m.body));
+
+    contents.drawNew();
+    contents.fixLayout();
+    contents.changed();
+
+    m.addBody(contents);
+
+    m.originalDestroy = m.destroy;
+    m.destroy = function() {
+        world.overlay.destroy();
+        this.originalDestroy();
+    }
+    m.drawNew();
+    m.fixLayout();
+
+    world.overlay = overlay;
+    world.add(overlay);
+    world.add(m);
+
+    overlay.step = function() {
+        this.setWidth(myself.width());
+        this.setHeight(myself.height());
+        this.setPosition(myself.position());
+    }
+    
+    return m;
+};
+
 IDE_Morph.prototype.inform = function (title, message) {
-    new DialogBoxMorph().inform(
+    var d = new DialogBoxMorph()
+    d.inform(
         title,
         localize(message),
         this.world()
     );
+    return d;
 };
 
 IDE_Morph.prototype.confirm = function (message, title, action) {
-    new DialogBoxMorph(null, action).askYesNo(
+    d = new DialogBoxMorph(null, action);
+    d.askYesNo(
         title,
         localize(message),
         this.world()
     );
+    return d;
 };
 
-IDE_Morph.prototype.prompt = function (message, callback, choices, key) {
-    (new DialogBoxMorph(null, callback)).withKey(key).prompt(
-        message,
+IDE_Morph.prototype.prompt = function (title, callback, choices, key) {
+    var d = new DialogBoxMorph(null, callback);
+    d.withKey(key).prompt(
+        title,
         '',
         this.world(),
         null,
         choices
     );
+    return d;
 };
