@@ -156,7 +156,7 @@ IDE_Morph.prototype.buildPanes = function () {
     this.createCategories();
     this.createPalette();
     this.createEditor();
-    this.createStatusBar();
+    this.createConfigPanel();
 };
 
 IDE_Morph.prototype.createLogo = function () {
@@ -523,14 +523,62 @@ IDE_Morph.prototype.createEditor = function () {
     this.scriptEditor.scrollY(this.scriptEditor.padding);
 };
 
-IDE_Morph.prototype.createStatusBar = function () {
-    this.statusBar = new Morph();
-    this.statusBar.color = this.frameColor;
-    this.statusBar.setWidth(this.palette.width() - 2);
-    this.add(this.statusBar);
-    this.statusBar.add(this.board);
-    this.board.setTop(this.statusBar.top());
-    this.board.setLeft(this.statusBar.left() + 2);
+IDE_Morph.prototype.createConfigPanel = function () {
+    var myself = this;
+
+    this.configPanel = new Morph();
+    this.configPanel.color = this.frameColor;
+    this.configPanel.setWidth(this.palette.width() - 2);
+    this.add(this.configPanel);
+    this.configPanel.add(this.board);
+    this.board.setTop(this.configPanel.top());
+    this.board.setLeft(this.configPanel.left() + 2);
+
+    this.internetLED = new CircleBoxMorph();
+    this.internetLED.setExtent(new Point(20, 20));
+    this.internetLED.setColor(new Color(200,100,100));
+    this.configPanel.add(this.internetLED);
+    this.internetLED.setTop(this.board.bottom() + 5);
+    this.internetLED.setLeft(this.configPanel.left() + 2);
+
+    this.mqttLED = new CircleBoxMorph();
+    this.mqttLED.setExtent(new Point(20, 20));
+    this.mqttLED.setColor(new Color(200,100,100));
+    this.configPanel.add(this.mqttLED);
+    this.mqttLED.setTop(this.internetLED.bottom() + 5);
+    this.mqttLED.setLeft(this.configPanel.left() + 2);
+
+    var internetButton = new PushButtonMorph(
+            null,
+            function () {
+                new InternetDialogMorph(
+                    myself.board,
+                    nop,
+                    myself.board
+                ).popUp(this.world);
+            },
+            'Connect to the Internet'
+        );
+    this.configPanel.add(internetButton);
+    internetButton.setLeft(this.internetLED.right() + 5);
+    internetButton.setTop(this.internetLED.top());
+
+    var mqttButton = new PushButtonMorph(
+            null,
+            function () {
+                new MQTTDialogMorph(
+                    myself.board,
+                    nop,
+                    myself.board
+                ).popUp(this.world);
+            },
+            'Connect to MQTT broker'
+        );
+    this.configPanel.add(mqttButton);
+    mqttButton.setLeft(this.mqttLED.right() + 5);
+    mqttButton.setTop(this.mqttLED.top());
+
+
 }
 
 // IDE_Morph layout
@@ -568,10 +616,10 @@ IDE_Morph.prototype.fixLayout = function (situation) {
     this.palette.setTop(this.categories.bottom());
     this.palette.setHeight(this.bottom() - this.palette.top());
 
-    // statusBar
-    this.statusBar.setTop(this.controlBar.bottom());
-    this.statusBar.setRight(this.right());
-    this.statusBar.setHeight(this.bottom() - this.controlBar.bottom());
+    // configPanel
+    this.configPanel.setTop(this.controlBar.bottom());
+    this.configPanel.setRight(this.right());
+    this.configPanel.setHeight(this.bottom() - this.controlBar.bottom());
 
     Morph.prototype.trackChanges = true;
     this.changed();

@@ -26,13 +26,25 @@ msg = {}
 cfg = {}
 cfg.p = {}
 cfg.s = {}
-
+cfg.i = false;
 
 -- Communication with the blocks environment
 -- =========================================
 
 uart.setup(uart.UART1, 115200, 8, uart.PARNONE, uart.STOP1)
-prints = function(string) uart.write(uart.UART1, string.."\r\n") end
+
+prints = function(string)
+    uart.write(uart.UART1, string .. "\r\n")
+end
+
+
+-- File handling
+-- =============
+
+function fileExists(name)
+   local f = io.open(name,"r")
+   if f ~= nil then io.close(f) return true else return false end
+end
 
 
 -- Casting
@@ -96,4 +108,8 @@ end
 -- User program
 -- ============
 
-dofile("/sd/autorun.lua")
+local scripts = {"internet", "mqtt", "autorun"}
+
+for index, script in pairs(scripts) do
+    if fileExists("/sd/" .. script .. ".lua") then dofile("/sd/" .. script .. ".lua") end
+end

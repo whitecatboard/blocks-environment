@@ -431,6 +431,11 @@ BoardMorph.prototype.init = function (ide) {
         password: ''
     };
 
+    this.internet = { 
+        interface: 'en',
+        online: false
+    };
+
     this.serialLib = require('serialport');
     this.SerialPort = this.serialLib.SerialPort;
 
@@ -723,9 +728,11 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                     buffer[0] = 0;
                     buffer.write('\r\nos.exit()\r\n', 1);
                 } else {
-                    var buffer = new Buffer(30);
+                    var string = '\r\ndofile("/sd/' + this.serialPort.fileName + '.lua")\r\n',
+                        buffer = new Buffer(string.length + 1);
                     buffer[0] = 0;
-                    buffer.write('\r\ndofile("/sd/autorun.lua")\r\n', 1);
+                    buffer.write(string, 1);
+                    this.serialPort.fileName = null;
                 }
                 this.serialWrite(buffer);
             } else {
@@ -760,20 +767,20 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 5);
         }
-    } else if (data.search('rt:') > -1) {
+    } else if (data.slice(0,2) === 'rt:') {
         // It's a thread that just came alive and its corresponding stack should be highlighted
         try {
-            var id = data.match(/rt:(.*?):/)[1],
+            var id = data.match(/^rt:(.*?):/)[1],
                 thread = myself.findThread(Number.parseInt(id));
             // This thread may not exist anymore
             if (thread) { thread.topBlock.addHighlight(thread.topBlock.removeHighlight()) };
         } catch(err) {
             log(err);
         }
-    } else if (data.search('dt:') > -1) {
+    } else if (data.slice(0,2) === 'dt:') {
         // It's a dead thread and its corresponding stack should be un-highlighted
         try {
-            var id = data.match(/dt:(.*?):/)[1],
+            var id = data.match(/^dt:(.*?):/)[1],
                 thread = myself.findThread(Number.parseInt(id));
             // This thread may not exist anymore
             if (thread) {
@@ -800,6 +807,42 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             log(err);
         }
+    } else if (data.slice(0,2) === 'ci') {
+        // We're getting configuration of Internet info
+        try {
+            var isConnected = data.match(/^ci:(.*?):/, '$1')[1];
+            if (isConnected === 'true') {
+                myself.ide.internetLED.setColor(new Color(80,255,80));
+                myself.ide.showMessage(localize('Board successfully connected\nto the Internet'), 3);
+            } else {
+                myself.ide.internetLED.setColor(new Color(200,100,100));
+                myself.ide.mqttLED.setColor(new Color(200,100,100));
+                myself.ide.showMessage(localize('Could not connect to the Internet.\nPlease review your connectivity\nshield and network status.'), 5);
+            }
+            this.setVariableWatcherValue(varName, contents);
+        } catch (err) {
+            log(err);
+        }
+    } else if ((data.search('mqtt') > -1) && (data.search('connect') > -1)) {
+        // temporary hack for intercepting "/sd/mqtt.lua:1: can't connect" until cfg.m:connect returns a boolean
+        myself.ide.mqttLED.setColor(new Color(200,100,100));
+        myself.ide.showMessage(localize('Could not connect to this Broker.\nPlease review your settings\nand network configuration.'), 5);
+    } else if (data.slice(0,2) === 'cm') {
+        // We're getting configuration of MQTT info
+        try {
+            var isConnected = data.match(/^cm:(.*?):/, '$1')[1];
+            if (isConnected === 'true') {
+                myself.ide.mqttLED.setColor(new Color(80,255,80));
+                myself.ide.showMessage(localize('Board successfully connected\nto MQTT Broker'), 3);
+            } else {
+                myself.ide.mqttLED.setColor(new Color(200,100,100));
+                myself.ide.showMessage(localize('Could not connect to this Broker.\nPlease review your settings\nand network configuration.'), 5);
+            }
+            this.setVariableWatcherValue(varName, contents);
+        } catch (err) {
+            log(err);
+        }
+
     } else if (this.startUpInterval && data.search('>') > -1) {
         clearInterval(this.startUpInterval);
         this.startUpInterval = null;
@@ -811,7 +854,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
     }
 };
 
-BoardMorph.prototype.serialWrite = function(data) {
+BoardMorph.prototype.serialWrite = function(data, fileName) {
     var myself = this;
 
     if (this.serialPort.writing) {
@@ -825,6 +868,8 @@ BoardMorph.prototype.serialWrite = function(data) {
     };
 
     this.serialPort.writing = true;
+
+    if (fileName) { this.serialPort.fileName = fileName; }
 
     this.serialPort.write(data,
         function() { 
@@ -891,10 +936,8 @@ BoardMorph.prototype.updateBootFile = function() {
                 } else {
                     try {
                         myself.outputData += data;
-                        myself.serialWrite(
-                                '\rio.receive("autorun.lua")\r',
-                                myself.parentThatIsA(IDE_Morph).showMessage('Boot file updated', 2)
-                                );
+                        myself.serialWrite('\rio.receive("autorun.lua")\r');
+                        myself.parentThatIsA(IDE_Morph).showMessage('Updating boot file...', 10)
                     } catch (error) {
                         myself.parentThatIsA(IDE_Morph).showMessage(error + '\nCould not update boot file');
                     }
@@ -978,7 +1021,7 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
     // We start writing
     // BoardMorph.prototype.parseSerialResponse takes over
 
-    this.serialWrite('\rio.receive("/sd/autorun.lua")\r');
+    this.serialWrite('\rio.receive("/sd/autorun.lua")\r', 'autorun');
 }
 
 BoardMorph.prototype.getReporterResult = function (block) {
@@ -1093,12 +1136,45 @@ BoardMorph.prototype.variableBlock = function (varName) {
     return block;
 };
 
+// Internet
+
+BoardMorph.prototype.configureInternet = function(interface) {
+    this.internet.interface = interface;
+
+    if (!this.outputData) {
+        this.ide.showMessage(localize('Trying to connect to the Internet...'), 5);
+        this.outputData = this.internetConnectionCode();
+        this.outputIndex = 0;
+        this.serialWrite('io.receive("/sd/internet.lua")\r', 'internet');
+    } 
+}
+
+BoardMorph.prototype.internetConnectionCode = function() {
+    return 'net.stop("en"); net.stop("gprs"); cfg.i = net.start("' + this.internet.interface + '"); prints("ci:"..tostring(cfg.i)..":")\r\n';
+}
+
 // MQTT
 
+BoardMorph.prototype.configureBroker = function(url, port, deviceID, username, password) {
+    this.broker.url = url;
+    this.broker.port = port;
+    this.broker.deviceID = deviceID;
+    this.broker.username = username;
+    this.broker.password = password;
+
+    if (!this.outputData) {
+        this.ide.showMessage(localize('Trying to connect to MQTT broker...'), 5);
+        this.outputData = this.mqttConnectionCode();
+        this.outputIndex = 0;
+        this.serialWrite('io.receive("/sd/mqtt.lua")\r', 'mqtt');
+    } 
+}
+
 BoardMorph.prototype.mqttConnectionCode = function() {
-    return ('cfg.m = mqtt.client("' 
+    // Until cfg.m:connect returns a boolean, we have to cheat and assume everything's alright
+    return ('if (not cfg.i) then prints("ci:false:"); prints("cm:false:") else prints("ci:true:"); cfg.m = mqtt.client("' 
             + this.broker.deviceID + '", "' + this.broker.url + '", ' + this.broker.port + ', false); cfg.m:connect("' 
-            + this.broker.username + '","' + this.broker.password + '");\r\n');
+            + this.broker.username + '","' + this.broker.password + '"); prints("cm:true:"); end\r\n');
 }
 
 // BoardMorph versioning
@@ -1342,20 +1418,6 @@ BoardMorph.prototype.blockTemplates = function (category) {
 
     } else if (cat === 'comm') {
 
-        button = new PushButtonMorph(
-            null,
-            function () {
-                new MQTTDialogMorph(
-                    myself,
-                    nop,
-                    myself
-                ).popUp(this.world);
-            },
-            'Connect to MQTT broker'
-        );
-        button.userMenu = helpMenu;
-        blocks.push(button);
-        blocks.push('-');
         blocks.push(block('subscribeToMQTTmessage'));
         blocks.push(block('publishMQTTmessage'));
 

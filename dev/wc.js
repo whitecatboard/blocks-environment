@@ -487,32 +487,105 @@ LuaExpression.prototype.setServo = function(pinNumber, value) {
             break;
     }
 
-    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "s", 0); local v = ' + rawValue + '; if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
+    this.code 
+            = 'setPinConfig(' + pinNumber + ', ' + pin + ', "s", 0); local v = ' + rawValue 
+            + '; if (v <= 180) then v = v / 180 * 1820 + 580; end; pwm.setduty(' + pin + ', v / 20000);\r\n'
 }
 
 //// Comm
 
-LuaExpression.prototype.assertInternet = function() {
-    return 'if (not cfg.i) then cfg.i = net.start("en") end\r\n'
-};
-
-LuaExpression.prototype.assertMQTT = function() {
-    return this.assertInternet() + 'if (cfg.m == nil) then ' + this.board.mqttConnectionCode() + ' end\r\n';
-};
-
 LuaExpression.prototype.subscribeToMQTTmessage = function(upvar, topic, body) {
     if (!body) { return };
     this.code 
-        = 'prints("\\r\\ndt:' + this.topBlock.thread.id + ':\\r\\n"); ' + this.assertMQTT() + 'cfg.m:subscribe(' + luaAutoEscape(topic) 
-        + ', mqtt.QOS0, (function(l, p) msg.' + upvar + ' = p; prints("\\r\\nrt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); ' + body + 'prints("\\r\\ndt:' + this.topBlock.thread.id + ':"..p.."\\r\\n"); end))\r\n';
+            = 'prints("\\r\\ndt:' + this.topBlock.thread.id + ':\\r\\n"); cfg.m:subscribe(' 
+            + luaAutoEscape(topic) + ', mqtt.QOS0, (function(l, p) msg.' + upvar + ' = p; prints("\\r\\nrt:'
+            + this.topBlock.thread.id + ':"..p.."\\r\\n"); ' + body + 'prints("\\r\\ndt:' + this.topBlock.thread.id
+            + ':"..p.."\\r\\n"); end))\r\n';
 };
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {
     this.code
-        = this.assertMQTT() + 'cfg.m:publish(' + luaAutoEscape(topic) 
-        + ', ' + luaAutoEscape(message) + ', mqtt.QOS0)\r\n'
+            = 'cfg.m:publish(' + luaAutoEscape(topic) + ', ' + luaAutoEscape(message) + ', mqtt.QOS0)\r\n'
 };
 
+
+// Dialog that lets us configure an Internet connection
+
+var InternetDialogMorph;
+
+InternetDialogMorph.prototype = new DialogBoxMorph();
+InternetDialogMorph.prototype.constructor = InternetDialogMorph;
+InternetDialogMorph.uber = DialogBoxMorph.prototype;
+
+function InternetDialogMorph(target, action, environment) {
+    this.init(target, action, environment);
+};
+
+InternetDialogMorph.prototype.init = function (target, action, environment) {
+    // initialize inherited properties:
+    InternetDialogMorph.uber.init.call(
+        this,
+        target,
+        action,
+        environment
+    );
+
+    this.labelString = 'Connect to the Internet';
+    this.createLabel();
+
+    this.addBody(new AlignmentMorph('column', 4));
+    this.body.alignment = 'left';
+
+    this.interfaceRow = new AlignmentMorph('row', this.padding);
+
+    // For now we're only supporting DHCP, so these are not yet relevant
+
+    /*
+    this.methodRow = new AlignmentMorph('row', this.padding);
+    this.ipRow = new AlignmentMorph('row', this.padding);
+    this.gatewayRow = new AlignmentMorph('row', this.padding);
+    this.maskRow = new AlignmentMorph('row', this.padding);
+    */
+
+    this.createInterfaceRow();
+
+    /*
+    this.createMethodRow();
+    this.createIpRow();
+    this.createGatewayRow();
+    this.createMaskRow();
+    */
+
+    this.body.add(this.interfaceRow);
+
+    /*
+    this.body.add(this.methodRow);
+    this.body.add(this.ipRow);
+    this.body.add(this.gatewayRow);
+    this.body.add(this.maskRow);
+    */
+
+    this.body.drawNew();
+    this.body.fixLayout();
+
+    this.addButton('ok', 'Ok');
+    this.addButton('cancel', 'Cancel');
+
+    this.fixLayout();
+    this.drawNew();
+};
+
+InternetDialogMorph.prototype.createInterfaceRow = function() {
+    this.interfaceField = new InputFieldMorph(this.target.internet.interface || {ethernet: 'en'}, false, {'ethernet':'en', 'GPRS':'gprs'}, true);
+    this.interfaceRow.add(new TextMorph('Interface:'));
+    this.interfaceRow.add(this.interfaceField);
+    this.interfaceRow.fixLayout();
+};
+
+InternetDialogMorph.prototype.ok = function() {
+    this.target.configureInternet(this.interfaceField.getValue());
+    this.accept();
+};
 
 // Dialog that lets us configure an MQTT broker connection
 
@@ -606,12 +679,6 @@ MQTTDialogMorph.prototype.createPasswordRow = function() {
 };
 
 MQTTDialogMorph.prototype.ok = function() {
-    this.target.broker = {
-        url: this.urlField.getValue(),
-        port: this.portField.getValue(),
-        deviceID: this.idField.getValue(),
-        username: this.usernameField.getValue(),
-        password: this.passwordField.getValue()
-    };
+    this.target.configureBroker(this.urlField.getValue(), this.portField.getValue(), this.idField.getValue(), this.usernameField.getValue(), this.passwordField.getValue());
     this.accept();
 };
