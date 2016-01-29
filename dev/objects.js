@@ -424,7 +424,7 @@ BoardMorph.prototype.init = function (ide) {
     this.reporterBlock = null;
 
     this.broker = { 
-        url: 'cssiberica.com',
+        url: 'test.mosquitto.org',
         port: '1883',
         deviceID: 'WhiteCat' + Math.floor(Math.random() * 100),
         username: '',
@@ -623,7 +623,7 @@ BoardMorph.prototype.updatePinValue = function(pin, value) {
     var watcher = detect(this.pinMorphs, function(each){ return each.pinNumber == pin});
     if (watcher) {
         if (watcher.config.text.slice(0,1) === 'D') {
-            value = value == 1;
+            value = value == 'true';
         }
         watcher.updateValue(value);
     }
@@ -749,11 +749,11 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
                 this.outputIndex += 254;
             }
         } 
-    } else if (data.slice(0,2) === 'pb') {
+    } else if (data.search(/pb:.*:\r/) > -1) {
         // This piece of data should show up in a bubble (_P_op up _B_alloon)
         try {
-            var id = data.match(/^pb:(.*?):/, '$1')[1],
-                contents = data.match(/^pb:.*?:(.*)/, '$1')[1];
+            var id = data.match(/pb:(.*?):/, '$1')[1],
+                contents = data.match(/pb:.*?:(.*):/, '$1')[1];
 
             if (id === 'r') {
                 // It's a reporter block
@@ -767,20 +767,20 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             myself.ide.showMessage('Error parsing data back from the board:\n' + data + '\n' + err, 5);
         }
-    } else if (data.slice(0,2) === 'rt:') {
+    } else if (data.search(/rt:.*:\r/) > -1) {
         // It's a thread that just came alive and its corresponding stack should be highlighted
         try {
-            var id = data.match(/^rt:(.*?):/)[1],
+            var id = data.match(/rt:(.*?):/)[1],
                 thread = myself.findThread(Number.parseInt(id));
             // This thread may not exist anymore
             if (thread) { thread.topBlock.addHighlight(thread.topBlock.removeHighlight()) };
         } catch(err) {
             log(err);
         }
-    } else if (data.slice(0,2) === 'dt:') {
+    } else if (data.search(/dt:.*:\r/) > -1) {
         // It's a dead thread and its corresponding stack should be un-highlighted
         try {
-            var id = data.match(/^dt:(.*?):/)[1],
+            var id = data.match(/dt:(.*?):/)[1],
                 thread = myself.findThread(Number.parseInt(id));
             // This thread may not exist anymore
             if (thread) {
@@ -789,28 +789,28 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         } catch (err) {
             log(err);
         }
-    } else if (data.slice(0,2) === 'pv') {
+    } else if (data.search(/pv:.*:\r/) > -1) {
         // We're getting pin values back
         try {
-            var pin = data.match(/^pv:(.*?):/, '$1')[1],
-                contents = data.match(/^pv:.*?:(.*)/, '$1')[1];
+            var pin = data.match(/pv:(.*?):/, '$1')[1],
+                contents = data.match(/pv:.*?:(.*):/, '$1')[1];
             this.updatePinValue(pin, contents);
         } catch (err) {
             log(err);
         }
-    } else if (data.slice(0,2) === 'vv') {
+    } else if (data.search(/vv:.*:\r/) > -1) {
         // We're getting variable values back
         try {
-            var varName = data.match(/^vv:(.*?):/, '$1')[1],
-                contents = data.match(/^vv:.*?:(.*)/, '$1')[1];
+            var varName = data.match(/vv:(.*?):/, '$1')[1],
+                contents = data.match(/vv:.*?:(.*):/, '$1')[1];
             this.setVariableWatcherValue(varName, contents);
         } catch (err) {
             log(err);
         }
-    } else if (data.slice(0,2) === 'ci') {
+    } else if (data.search(/ci:.*:\r/) > -1) {
         // We're getting configuration of Internet info
         try {
-            var isConnected = data.match(/^ci:(.*?):/, '$1')[1];
+            var isConnected = data.match(/ci:(.*?):/, '$1')[1];
             if (isConnected === 'true') {
                 myself.ide.internetLED.setColor(new Color(80,255,80));
                 myself.ide.showMessage(localize('Board successfully connected\nto the Internet'), 3);
@@ -827,10 +827,10 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
         // temporary hack for intercepting "/sd/mqtt.lua:1: can't connect" until cfg.m:connect returns a boolean
         myself.ide.mqttLED.setColor(new Color(200,100,100));
         myself.ide.showMessage(localize('Could not connect to this Broker.\nPlease review your settings\nand network configuration.'), 5);
-    } else if (data.slice(0,2) === 'cm') {
+    } else if (data.search(/cm:.*:\r/) > -1) {
         // We're getting configuration of MQTT info
         try {
-            var isConnected = data.match(/^cm:(.*?):/, '$1')[1];
+            var isConnected = data.match(/cm:(.*?):/, '$1')[1];
             if (isConnected === 'true') {
                 myself.ide.mqttLED.setColor(new Color(80,255,80));
                 myself.ide.showMessage(localize('Board successfully connected\nto MQTT Broker'), 3);
@@ -843,7 +843,7 @@ BoardMorph.prototype.parseSerialResponse = function(data) {
             log(err);
         }
 
-    } else if (this.startUpInterval && data.search('>') > -1) {
+    } else if (this.startUpInterval && data.search('/ >') > -1) {
         clearInterval(this.startUpInterval);
         this.startUpInterval = null;
         // INTERVAL for reading inputs:
@@ -1027,9 +1027,9 @@ BoardMorph.prototype.buildThreads = function(topBlocksToRun, forceRun) {
 BoardMorph.prototype.getReporterResult = function (block) {
     this.reporterBlock = block;
     if (block.selector === 'reportNewList') {
-        this.serialWrite('prints("pb:r:"..printTable(' + new LuaExpression(block, this) + '))\r\n');
+        this.serialWrite('prints("pb:r:"..printTable(' + new LuaExpression(block, this) + ')..":")\r\n');
     } else {
-        this.serialWrite('prints("pb:r:"..tostring(' + new LuaExpression(block, this) + '))\r\n');
+        this.serialWrite('prints("pb:r:"..tostring(' + new LuaExpression(block, this) + ')..":")\r\n');
     }
 }
 

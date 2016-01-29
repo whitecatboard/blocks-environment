@@ -53,20 +53,20 @@
 
     pb  → Popup Bubble. A piece of data that should show up in a bubble.
 
-            The format is pb:[ID]:[data], where ID is the thread ID, or 'r' in
+            The format is pb:[ID]:[data]:, where ID is the thread ID, or 'r' in
             case it's just a reporter that got clicked.
 
     pv  → Pin Value. We should update some value in the board watcher.
 
     rt  → Runnning Thread. A thread has just come alive.
 
-            The format is rc:[ID]:[data], where data is optional. This
+            The format is rc:[ID]:[data]:, where data is optional. This
             thread should be highlighted and possibly do something with
             the data it has just received.
 
     dt  → Dead Thread. A thread has ended.
 
-            The format is dc:[ID]:[data], where data is optional. This
+            The format is dc:[ID]:[data]:, where data is optional. This
             thread should be un-highlighted and possibly do something with
             the data it has just received.
 */
@@ -137,7 +137,7 @@ Thread.prototype.updateBody = function(body) {
 };
 
 Thread.prototype.wrap = function(body) {
-    return 'function()\r\n\tprints("\\r\\nrt:' + this.id + ':\\r\\n")\r\n\t' + body + '\r\n\tprints("\\r\\ndt:' + this.id + ':\\r\\n")\r\nend\r\n';
+    return 'function()\r\n\tprints("\\r\\nrt:' + this.id + '::\\r\\n")\r\n\t' + body + '\r\n\tprints("\\r\\ndt:' + this.id + '::\\r\\n")\r\nend\r\n';
 };
 
 Thread.prototype.start = function() {
@@ -374,19 +374,19 @@ LuaExpression.prototype.reportTimer = function() {
 }
 
 LuaExpression.prototype.runLua = function(code) {
-    this.code = 'local f = (function() ' + code + ' end)(); if (f) then prints("\\r\\npb:' + this.topBlock.thread.id + ':" .. f .. "\\r\\n") end;\r\n';
+    this.code = 'local f = (function() ' + code + ' end)(); if (f) then prints("\\r\\npb:' + this.topBlock.thread.id + ':" .. f .. ":\\r\\n") end;\r\n';
 };
 
 //// Data
 
 LuaExpression.prototype.doSetVar = function(varName, value) {
     this.code = 'local v = ' + luaAutoEscape(value) + '; vars.' + varName + ' = v; prints("\\r\\nvv:'
-            + varName + ':"..printVar(v).."\\r\\n")\r\n';
+            + varName + ':"..printVar(v)..":\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.doChangeVar = function(varName, delta) {
     this.code = 'vars.' + varName + ' = vars.' + varName + ' + ' + delta
-        + '; prints("\\r\\nvv:' + varName + ':"..printVar(vars.' + varName + ').."\\r\\n")\r\n';
+        + '; prints("\\r\\nvv:' + varName + ':"..printVar(vars.' + varName + ')..":\\r\\n")\r\n';
 };
 
 LuaExpression.prototype.reportGetVar = function() {
@@ -444,7 +444,7 @@ LuaExpression.prototype.replaceListItem = function(index, list, item) {
 LuaExpression.prototype.setPinDigital = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.digital[pinNumber];
     // pio.OUTPUT is 0
-    this.code =  'setPinConfig(' + pinNumber + ', ' + pin + ', "d", 0); prints("\\r\\npv:' + pinNumber + ':".. tostring(toDigital(' + value + ')).."\\r\\n"); pio.pin.setval(digitalToNumber(toDigital(' + value + ')), ' + pin + ')\r\n';
+    this.code =  'setPinConfig(' + pinNumber + ', ' + pin + ', "d", 0); prints("\\r\\npv:' + pinNumber + ':".. tostring(toDigital(' + value + '))..":\\r\\n"); pio.pin.setval(digitalToNumber(toDigital(' + value + ')), ' + pin + ')\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'd');
 };
 
@@ -452,20 +452,20 @@ LuaExpression.prototype.getPinDigital = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first set the pin direction before reporting its value
     // pio.INPUT is 1
     var pin = BoardMorph.pinOut.digital[pinNumber];
-    this.code = '(function() setPinConfig(' + pinNumber + ', ' + pin + ', "d", 1); local v = pio.pin.getval(' + pin + '); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()\r\n';
+    this.code = '(function() setPinConfig(' + pinNumber + ', ' + pin + ', "d", 1); local v = pio.pin.getval(' + pin + '); prints("\\r\\npv:' + pinNumber + ':"..v..":\\r\\n"); return v; end)()\r\n';
     this.board.updatePinConfig(pinNumber, 'i', 'd');
 };
 
 LuaExpression.prototype.setPinAnalog = function(pinNumber, value) {
     var pin = BoardMorph.pinOut.pwm[pinNumber];
-    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "a", 0); local v = toNumber(' + value + '); pwm.write(' + pin + ', v); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n");\r\n';
+    this.code = 'setPinConfig(' + pinNumber + ', ' + pin + ', "a", 0); local v = toNumber(' + value + '); pwm.write(' + pin + ', v); prints("\\r\\npv:' + pinNumber + ':"..v..":\\r\\n");\r\n';
     this.board.updatePinConfig(pinNumber, 'o', 'a');
 };
 
 LuaExpression.prototype.getPinAnalog = function(pinNumber) {
     // We need to wrap this one into a lambda, because it needs to first setup ADC before reporting its value
     var pin = BoardMorph.pinOut.analog[pinNumber];
-    this.code = '(function() setPinConfig(' + pinNumber + ', ' + pin + ', "a", 1); local v = cfg.p[' + pinNumber + '][3]:read(); prints("\\r\\npv:' + pinNumber + ':"..v.."\\r\\n"); return v; end)()'
+    this.code = '(function() setPinConfig(' + pinNumber + ', ' + pin + ', "a", 1); local v = cfg.p[' + pinNumber + '][3]:read(); prints("\\r\\npv:' + pinNumber + ':"..v..":\\r\\n"); return v; end)()'
     this.board.updatePinConfig(pinNumber, 'i', 'a');
 };
 
@@ -497,10 +497,11 @@ LuaExpression.prototype.setServo = function(pinNumber, value) {
 LuaExpression.prototype.subscribeToMQTTmessage = function(upvar, topic, body) {
     if (!body) { return };
     this.code 
-            = 'prints("\\r\\ndt:' + this.topBlock.thread.id + ':\\r\\n"); cfg.m:subscribe(' 
-            + luaAutoEscape(topic) + ', mqtt.QOS0, (function(l, p) msg.' + upvar + ' = p; prints("\\r\\nrt:'
-            + this.topBlock.thread.id + ':"..p.."\\r\\n"); ' + body + 'prints("\\r\\ndt:' + this.topBlock.thread.id
-            + ':"..p.."\\r\\n"); end))\r\n';
+            = 'prints("\\r\\ndt:' + this.topBlock.thread.id + '::\\r\\n"); local subscribed = (cfg.callback' + this.topBlock.thread.id
+            + ' ~= nil); cfg.callback' + this.topBlock.thread.id + ' = (function(l, p) msg.' + upvar + ' = p; prints("\\r\\nrt:'
+            + this.topBlock.thread.id + ':"..p..":\\r\\n"); ' + body + 'prints("\\r\\ndt:' + this.topBlock.thread.id
+            + ':"..p..":\\r\\n"); end); if (not subscribed) then cfg.m:subscribe(' + luaAutoEscape(topic) + ', mqtt.QOS0, function(l, p) cfg.callback' 
+            + this.topBlock.thread.id + '(l, p) end) end\r\n';
 };
 
 LuaExpression.prototype.publishMQTTmessage = function(message, topic) {

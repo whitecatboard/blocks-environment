@@ -31,10 +31,10 @@ cfg.i = false;
 -- Communication with the blocks environment
 -- =========================================
 
-uart.setup(uart.UART1, 115200, 8, uart.PARNONE, uart.STOP1)
+uart.setup(uart.CONSOLE, 115200, 8, uart.PARNONE, uart.STOP1)
 
 prints = function(string)
-    uart.write(uart.UART1, string .. "\r\n")
+    uart.write(uart.CONSOLE, string .. "\r\n")
 end
 
 
