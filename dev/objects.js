@@ -424,7 +424,7 @@ BoardMorph.prototype.init = function (ide) {
     this.reporterBlock = null;
 
     this.broker = { 
-        url: 'test.mosquitto.org',
+        url: 'cssiberica.com',
         port: '1883',
         deviceID: 'WhiteCat' + Math.floor(Math.random() * 100),
         username: '',

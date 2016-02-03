@@ -531,7 +531,7 @@ InternetDialogMorph.prototype.init = function (target, action, environment) {
         environment
     );
 
-    this.labelString = 'Connect to the Internet';
+    this.labelString = localize('Connect to the Internet');
     this.createLabel();
 
     this.addBody(new AlignmentMorph('column', 4));
@@ -578,7 +578,7 @@ InternetDialogMorph.prototype.init = function (target, action, environment) {
 
 InternetDialogMorph.prototype.createInterfaceRow = function() {
     this.interfaceField = new InputFieldMorph(this.target.internet.interface || {ethernet: 'en'}, false, {'ethernet':'en', 'GPRS':'gprs'}, true);
-    this.interfaceRow.add(new TextMorph('Interface:'));
+    this.interfaceRow.add(new TextMorph(localize('Interface:')));
     this.interfaceRow.add(this.interfaceField);
     this.interfaceRow.fixLayout();
 };
@@ -609,7 +609,7 @@ MQTTDialogMorph.prototype.init = function (target, action, environment) {
         environment
     );
 
-    this.labelString = 'Connect to MQTT broker';
+    this.labelString = localize('Connect to MQTT broker');
     this.createLabel();
 
     this.addBody(new AlignmentMorph('column', 4));
@@ -645,13 +645,13 @@ MQTTDialogMorph.prototype.init = function (target, action, environment) {
 
 MQTTDialogMorph.prototype.createUrlRow = function() {
     this.urlField = new InputFieldMorph(this.target.broker.url || 'whitecatboard.org');
-    this.urlRow.add(new TextMorph('Broker url:'));
+    this.urlRow.add(new TextMorph(localize('Broker url:')));
     this.urlRow.add(this.urlField);
     this.urlRow.fixLayout();
 };
 
 MQTTDialogMorph.prototype.createPortRow = function() {
-    this.portRow.add(new TextMorph('Port:'));
+    this.portRow.add(new TextMorph(localize('Port:')));
     this.portField = new InputFieldMorph(this.target.broker.port || '1883');
     this.portRow.add(this.portField);
     this.portRow.fixLayout();
@@ -659,14 +659,14 @@ MQTTDialogMorph.prototype.createPortRow = function() {
 
 MQTTDialogMorph.prototype.createIdRow = function() {
     this.idField = new InputFieldMorph(this.target.broker.deviceID || ('WhiteCat' + Math.floor(Math.random() * 100)));
-    this.idRow.add(new TextMorph('Board ID:'));
+    this.idRow.add(new TextMorph(localize('Board ID:')));
     this.idRow.add(this.idField);
     this.idRow.fixLayout();
 };
 
 MQTTDialogMorph.prototype.createUsernameRow = function() {
     this.usernameField = new InputFieldMorph(this.target.broker.username || '');
-    this.usernameRow.add(new TextMorph('username:'));
+    this.usernameRow.add(new TextMorph(localize('Username:')));
     this.usernameRow.add(this.usernameField);
     this.usernameRow.fixLayout();
 };
@@ -674,7 +674,7 @@ MQTTDialogMorph.prototype.createUsernameRow = function() {
 MQTTDialogMorph.prototype.createPasswordRow = function() {
     this.passwordField = new InputFieldMorph(this.target.broker.password || '');
     this.passwordField.contents().text.toggleIsPassword(); 
-    this.passwordRow.add(new TextMorph('Password:'));
+    this.passwordRow.add(new TextMorph(localize('Password:')));
     this.passwordRow.add(this.passwordField);
     this.passwordRow.fixLayout();
 };

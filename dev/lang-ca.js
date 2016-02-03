@@ -337,6 +337,24 @@ SnapTranslator.dict.ca = {
     'No':
         'No',
 
+    // Communications
+    'Connect to the Internet':
+        'Connecta\'t a Internet',
+    'Interface:':
+        'Interfície:',
+    'Connect to MQTT broker':
+        'Connecta\'t a un broker MQTT',
+    'Broker url:':
+        'URL del broker:',
+    'Port:':
+        'Port:',
+    'Board ID:':
+        'Nom de la placa:',
+    'Username:':
+        'Nom d\'usuari:',
+    'Password:':
+        'Contrasenya:',
+
     // help
     'Help':
         'Ajuda',
@@ -487,7 +505,7 @@ SnapTranslator.dict.ca = {
     'License':
         'Llicència',
     'current module versions:':
-        'versions del mòdul actual',
+        'versions actuals dels mòduls',
     'Contributors':
         'Contribuïdors',
     'Translations':

@@ -557,8 +557,9 @@ IDE_Morph.prototype.createConfigPanel = function () {
                     myself.board
                 ).popUp(this.world);
             },
-            'Connect to the Internet'
+            'Internet'
         );
+
     this.configPanel.add(internetButton);
     internetButton.setLeft(this.internetLED.right() + 5);
     internetButton.setTop(this.internetLED.top());
@@ -572,7 +573,7 @@ IDE_Morph.prototype.createConfigPanel = function () {
                     myself.board
                 ).popUp(this.world);
             },
-            'Connect to MQTT broker'
+            'MQTT'
         );
     this.configPanel.add(mqttButton);
     mqttButton.setLeft(this.mqttLED.right() + 5);
@@ -922,13 +923,15 @@ IDE_Morph.prototype.settingsMenu = function () {
             'check to run\nthe edited script\nwhen moving the slider'
         );
     }
-    menu.addLine();
-    menu.addItem(
+    if (shiftClicked) {
+        menu.addLine();
+        menu.addItem(
             'Update boot file',
             'updateBootFile',
             'This file is stored in\nthe board and defines'
-                +'\nbasic functions needed\nfor the blocks environment\nto work.'
-            );
+                +'\nbasic functions needed\nfor the blocks environment\nto work.',
+            new Color(100, 0, 0));
+        }
     menu.popup(world, pos);
 };
 
