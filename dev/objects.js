@@ -1138,9 +1138,7 @@ BoardMorph.prototype.variableBlock = function (varName) {
 
 // Internet
 
-BoardMorph.prototype.configureInternet = function(interface) {
-    this.internet.interface = interface;
-
+BoardMorph.prototype.configureInternet = function() {
     if (!this.outputData) {
         this.ide.showMessage(localize('Trying to connect to the Internet...'), 5);
         this.outputData = this.internetConnectionCode();
@@ -1150,7 +1148,11 @@ BoardMorph.prototype.configureInternet = function(interface) {
 }
 
 BoardMorph.prototype.internetConnectionCode = function() {
-    return 'net.stop("en"); net.stop("gprs"); cfg.i = net.start("' + this.internet.interface + '"); prints("ci:"..tostring(cfg.i)..":")\r\n';
+    if (this.internet.interface === 'gprs') {
+        return 'net.stop("en"); net.stop("gprs"); net.setup("gprs", "' + this.internet.apn + '", "' + this.internet.pin + '"); cfg.i = net.start("gprs"); prints("ci:"..tostring(cfg.i)..":")\r\n';
+    } else if (this.internet.interface === 'en') {
+        return 'net.stop("en"); net.stop("gprs"); cfg.i = net.start("en"); prints("ci:"..tostring(cfg.i)..":")\r\n';
+    }
 }
 
 // MQTT

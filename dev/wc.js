@@ -523,6 +523,8 @@ function InternetDialogMorph(target, action, environment) {
 };
 
 InternetDialogMorph.prototype.init = function (target, action, environment) {
+    var myself = this;
+
     // initialize inherited properties:
     InternetDialogMorph.uber.init.call(
         this,
@@ -566,6 +568,34 @@ InternetDialogMorph.prototype.init = function (target, action, environment) {
     this.body.add(this.maskRow);
     */
 
+    this.reactToChoice = function(choice) {
+        if (choice == 'gprs') {
+            if (!myself.apnRow) {
+                myself.apnRow = new AlignmentMorph('row', this.padding);
+                myself.pinRow = new AlignmentMorph('row', this.padding);
+                myself.createApnRow();
+                myself.createPinRow();
+                myself.body.add(myself.apnRow);
+                myself.body.add(myself.pinRow);
+                myself.body.drawNew();
+                myself.body.fixLayout();
+                myself.drawNew();
+                myself.fixLayout();
+            }
+        } else {
+            if (myself.apnRow) {
+                myself.apnRow.destroy();
+                myself.pinRow.destroy();
+                myself.apnRow = null;
+                myself.pinRow = null;
+                myself.body.drawNew();
+                myself.body.fixLayout();
+                myself.drawNew();
+                myself.fixLayout();
+            }
+        }
+    };
+
     this.body.drawNew();
     this.body.fixLayout();
 
@@ -576,6 +606,21 @@ InternetDialogMorph.prototype.init = function (target, action, environment) {
     this.drawNew();
 };
 
+InternetDialogMorph.prototype.createApnRow = function() {
+    this.apnField = new InputFieldMorph(this.target.internet.apn || '');
+    this.apnRow.add(new TextMorph(localize('APN:')));
+    this.apnRow.add(this.apnField);
+    this.apnRow.fixLayout();
+};
+
+InternetDialogMorph.prototype.createPinRow = function() {
+    this.pinField = new InputFieldMorph(this.target.internet.pin || 0000);
+    this.pinRow.add(new TextMorph(localize('PIN:')));
+    this.pinRow.add(this.pinField);
+    this.pinRow.fixLayout();
+};
+
+
 InternetDialogMorph.prototype.createInterfaceRow = function() {
     this.interfaceField = new InputFieldMorph(this.target.internet.interface || {ethernet: 'en'}, false, {'ethernet':'en', 'GPRS':'gprs'}, true);
     this.interfaceRow.add(new TextMorph(localize('Interface:')));
@@ -584,7 +629,14 @@ InternetDialogMorph.prototype.createInterfaceRow = function() {
 };
 
 InternetDialogMorph.prototype.ok = function() {
-    this.target.configureInternet(this.interfaceField.getValue());
+    this.target.internet.interface = this.interfaceField.getValue();
+
+    if (this.apnField) {
+        this.target.internet.apn = this.apnField.getValue();
+        this.target.internet.pin = this.pinField.getValue();
+    }
+
+    this.target.configureInternet();
     this.accept();
 };
 
